@@ -3,16 +3,73 @@
 import Link from "next/link";
 import { MobiusLogoMark } from "@/components/brand/MobiusLogo";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const { signUp, signInWithGoogle } = useAuth();
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    window.location.href = "/app";
+    setError(null);
+    setIsSubmitting(true);
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const { error: signUpError } = await signUp(email, password, name);
+      if (signUpError) {
+        setError(signUpError.message);
+      } else {
+        // Supabase may require email confirmation depending on settings.
+        // If email confirmation is disabled, the user is signed in immediately.
+        setShowConfirmation(true);
+      }
+    } catch {
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const handleGoogleSignUp = async () => {
+    setError(null);
+    const { error: googleError } = await signInWithGoogle();
+    if (googleError) {
+      setError(googleError.message);
+    }
+  };
+
+  if (showConfirmation) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-white">
+        <div className="w-full max-w-sm text-center">
+          <div className="mb-8">
+            <MobiusLogoMark size={48} className="mx-auto mb-6" />
+            <h1 className="text-headline text-surface-900 font-display mb-2">Check your email</h1>
+            <p className="text-body text-surface-400">
+              We sent a confirmation link to <strong className="text-surface-700">{email}</strong>.
+              Click it to activate your account.
+            </p>
+          </div>
+          <Link href="/login" className="text-accent-600 hover:text-accent-700 font-medium text-body-sm">
+            Back to Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-white">
@@ -26,9 +83,15 @@ export default function SignUpPage() {
           <p className="text-body text-surface-400 mt-2">Start discovering what you love.</p>
         </div>
 
+        {error && (
+          <div className="mb-6 p-3 rounded-apple bg-red-50 border border-red-200">
+            <p className="text-body-sm text-red-600">{error}</p>
+          </div>
+        )}
+
         <div className="space-y-3 mb-8">
           <button
-            onClick={() => (window.location.href = "/app")}
+            onClick={handleGoogleSignUp}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-apple border border-surface-300 hover:bg-surface-50 transition-colors"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -38,16 +101,6 @@ export default function SignUpPage() {
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
             <span className="text-body font-medium text-surface-700">Continue with Google</span>
-          </button>
-
-          <button
-            onClick={() => (window.location.href = "/app")}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-apple border border-surface-300 hover:bg-surface-50 transition-colors"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-            </svg>
-            <span className="text-body font-medium text-surface-700">Continue with Apple</span>
           </button>
         </div>
 
@@ -81,6 +134,7 @@ export default function SignUpPage() {
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </div>
           <div>
@@ -89,13 +143,19 @@ export default function SignUpPage() {
               id="password"
               type="password"
               className="input-field"
-              placeholder="Create a password"
+              placeholder="Create a password (6+ characters)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
             />
           </div>
-          <button type="submit" className="w-full bg-surface-900 text-white py-3.5 rounded-apple font-medium hover:bg-surface-800 transition-colors">
-            Create Account
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-surface-900 text-white py-3.5 rounded-apple font-medium hover:bg-surface-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? "Creating account..." : "Create Account"}
           </button>
         </form>
 

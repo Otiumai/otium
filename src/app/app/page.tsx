@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Plus, Trash2, ChevronRight, LogOut, Sparkles, Target, MessageCircle, Trophy, ArrowRight, Flame, Calendar, BookOpen, Volume2 } from "lucide-react";
+import { Send, Plus, Trash2, ChevronRight, LogOut, Sparkles, Target, MessageCircle, Trophy, ArrowRight, Flame, Calendar, BookOpen, Volume2, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Interest, ChatMessage, QuickReply, Creator, Course, CourseWeek } from "@/types";
 import { generateId, getInterestEmoji } from "@/lib/ai";
 import { MobiusLogoMark } from "@/components/brand/MobiusLogo";
@@ -10,6 +11,22 @@ import QuickReplyButtons from "@/components/chat/QuickReplyButtons";
 import { CreatorList } from "@/components/chat/CreatorCard";
 import CourseView from "@/components/chat/CourseView";
 import { useSpeechToText, useTextToSpeech, MicButton, SpeakButton, AutoSpeakToggle } from "@/components/chat/VoiceControls";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  fetchInterests,
+  createInterest,
+  deleteInterest as dbDeleteInterest,
+  saveMessage,
+  updateMessage,
+  saveCourse,
+  addWeeksToCourse,
+  updateCourseCurrentWeek,
+  unlockWeek,
+  toggleTaskCompletion,
+  getCourseId,
+  getWeekId,
+  updateInterestOnboarding,
+} from "@/lib/db";
 
 function parseMarkdown(text: string): string {
   return text
@@ -29,12 +46,16 @@ export default function AppPage() {
   const [activeInterestId, setActiveInterestId] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [showSidebar, setShowSidebar] = useState(true);
   const [activeTab, setActiveTab] = useState<"chat" | "journey">("chat");
   const [journeyInput, setJourneyInput] = useState("");
   const [showMilestone, setShowMilestone] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const { user, signOut } = useAuth();
+  const router = useRouter();
 
   // Voice controls
   const stt = useSpeechToText();
@@ -46,6 +67,22 @@ export default function AppPage() {
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
+
+  // Load interests from database on mount
+  useEffect(() => {
+    if (!user) return;
+    const loadData = async () => {
+      try {
+        const data = await fetchInterests(user.id);
+        setInterests(data);
+      } catch (err) {
+        console.error("Failed to load interests:", err);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+    loadData();
+  }, [user]);
 
   useEffect(() => {
     scrollToBottom();
@@ -81,8 +118,13 @@ export default function AppPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeInterest?.messages, isLoading, tts.autoSpeak]);
 
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/");
+  };
+
   const sendMessage = async (content: string, switchToChat?: boolean) => {
-    if (!content.trim() || isLoading) return;
+    if (!content.trim() || isLoading || !user) return;
     if (switchToChat) setActiveTab("chat");
 
     const userMessage: ChatMessage = {
@@ -93,10 +135,13 @@ export default function AppPage() {
     };
 
     let currentInterest: Interest;
+    let isNewInterest = false;
 
     if (!activeInterest) {
+      isNewInterest = true;
+      const tempId = generateId();
       currentInterest = {
-        id: generateId(),
+        id: tempId,
         name: content.trim(),
         emoji: getInterestEmoji(content),
         messages: [userMessage],
@@ -106,7 +151,17 @@ export default function AppPage() {
         createdAt: new Date(),
       };
       setInterests((prev) => [...prev, currentInterest]);
-      setActiveInterestId(currentInterest.id);
+      setActiveInterestId(tempId);
+
+      // Save to DB and get real ID
+      try {
+        const dbId = await createInterest(user.id, currentInterest.name, currentInterest.emoji);
+        currentInterest = { ...currentInterest, id: dbId };
+        setInterests((prev) => prev.map((i) => (i.id === tempId ? { ...i, id: dbId } : i)));
+        setActiveInterestId(dbId);
+      } catch (err) {
+        console.error("Failed to create interest:", err);
+      }
     } else {
       currentInterest = {
         ...activeInterest,
@@ -115,6 +170,14 @@ export default function AppPage() {
       setInterests((prev) =>
         prev.map((i) => (i.id === currentInterest.id ? currentInterest : i))
       );
+    }
+
+    // Save user message to DB
+    try {
+      const dbMsgId = await saveMessage(currentInterest.id, userMessage);
+      userMessage.id = dbMsgId;
+    } catch (err) {
+      console.error("Failed to save user message:", err);
     }
 
     setInputValue("");
@@ -234,6 +297,70 @@ export default function AppPage() {
           return updatedInterest;
         })
       );
+
+      // Persist assistant message + structured data to DB
+      const finalAssistantMsg: ChatMessage = {
+        ...assistantMessage,
+        content: fullContent,
+        quickReplies: structuredData.quickReplies || undefined,
+        creators: structuredData.creators && structuredData.creators.length > 0 ? structuredData.creators : undefined,
+        courseUpdate: structuredData.courseWeeks && structuredData.courseWeeks.length > 0 ? structuredData.courseWeeks : undefined,
+      };
+
+      try {
+        const dbAsstId = await saveMessage(currentInterest.id, finalAssistantMsg);
+        assistantMessage.id = dbAsstId;
+        // Update local state with the DB id
+        setInterests((prev) =>
+          prev.map((i) =>
+            i.id === currentInterest.id
+              ? { ...i, messages: i.messages.map((m) => m.id === assistantMessage.id || m.content === fullContent && m.role === "assistant" ? { ...m, id: dbAsstId } : m) }
+              : i
+          )
+        );
+      } catch (err) {
+        console.error("Failed to save assistant message:", err);
+      }
+
+      // Persist course if newly created
+      if (structuredData.onboardingComplete && structuredData.coursePlan) {
+        try {
+          const weeks = (structuredData.courseWeeks || []).map((w, idx) => ({
+            ...w,
+            unlocked: idx < 2,
+            tasks: w.tasks.map((t) => ({ ...t, completed: false })),
+          }));
+          await saveCourse(currentInterest.id, {
+            title: structuredData.coursePlan.title,
+            description: structuredData.coursePlan.description,
+            totalWeeks: structuredData.coursePlan.totalWeeks,
+            weeks,
+          });
+          await updateInterestOnboarding(currentInterest.id, true);
+        } catch (err) {
+          console.error("Failed to save course:", err);
+        }
+      }
+
+      // Persist new weeks added to existing course
+      const currentInterestState = interests.find((i) => i.id === currentInterest.id);
+      if (currentInterestState?.course && structuredData.courseWeeks && structuredData.courseWeeks.length > 0 && !structuredData.onboardingComplete) {
+        try {
+          const courseId = await getCourseId(currentInterest.id);
+          if (courseId) {
+            const existingWeekNums = new Set(currentInterestState.course.weeks.map((w) => w.weekNumber));
+            const newWeeks = structuredData.courseWeeks
+              .filter((w) => !existingWeekNums.has(w.weekNumber))
+              .map((w) => ({ ...w, unlocked: true, tasks: w.tasks.map((t) => ({ ...t, completed: false })) }));
+            if (newWeeks.length > 0) {
+              await addWeeksToCourse(courseId, newWeeks);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to save new weeks:", err);
+        }
+      }
+
     } catch (error) {
       console.error("Error:", error);
       setInterests((prev) =>
@@ -252,19 +379,32 @@ export default function AppPage() {
   const handleNewInterest = () => { setActiveInterestId(null); setActiveTab("chat"); inputRef.current?.focus(); };
   const handleMicToggle = () => { stt.isListening ? stt.stopListening() : stt.startListening(); };
 
-  const handleDeleteInterest = (id: string) => {
+  const handleDeleteInterest = async (id: string) => {
     setInterests((prev) => prev.filter((i) => i.id !== id));
     if (activeInterestId === id) setActiveInterestId(interests.length > 1 ? interests.find((i) => i.id !== id)?.id || null : null);
+    try {
+      await dbDeleteInterest(id);
+    } catch (err) {
+      console.error("Failed to delete interest:", err);
+    }
   };
 
-  const handleToggleTask = (weekNumber: number, taskId: string) => {
+  const handleToggleTask = async (weekNumber: number, taskId: string) => {
     if (!activeInterest?.course) return;
+
+    let newCompleted = false;
     setInterests((prev) =>
       prev.map((i) => {
         if (i.id !== activeInterest.id || !i.course) return i;
         const updatedWeeks = i.course.weeks.map((w) => {
           if (w.weekNumber !== weekNumber) return w;
-          return { ...w, tasks: w.tasks.map((t) => t.id === taskId ? { ...t, completed: !t.completed } : t) };
+          return { ...w, tasks: w.tasks.map((t) => {
+            if (t.id === taskId) {
+              newCompleted = !t.completed;
+              return { ...t, completed: !t.completed };
+            }
+            return t;
+          }) };
         });
         let currentWeek = i.course.currentWeek;
         const currentWeekData = updatedWeeks.find((w) => w.weekNumber === currentWeek);
@@ -277,6 +417,31 @@ export default function AppPage() {
         return { ...i, course: { ...i.course, weeks: updatedWeeks, currentWeek } };
       })
     );
+
+    // Persist task toggle to DB
+    try {
+      const courseId = await getCourseId(activeInterest.id);
+      if (courseId) {
+        const weekId = await getWeekId(courseId, weekNumber);
+        if (weekId) {
+          await toggleTaskCompletion(weekId, taskId, newCompleted);
+        }
+
+        // Check if week is now complete and persist progression
+        const interest = interests.find((i) => i.id === activeInterest.id);
+        if (interest?.course) {
+          const weekData = interest.course.weeks.find((w) => w.weekNumber === weekNumber);
+          const allCompleted = weekData?.tasks.every((t) => t.id === taskId ? newCompleted : t.completed);
+          if (allCompleted && weekNumber === interest.course.currentWeek) {
+            const nextWeekNum = weekNumber + 1;
+            await updateCourseCurrentWeek(activeInterest.id, nextWeekNum);
+            await unlockWeek(courseId, nextWeekNum);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to persist task toggle:", err);
+    }
   };
 
   const handleRequestMoreWeeks = () => {
@@ -305,6 +470,17 @@ export default function AppPage() {
   const lastAssistantMsgIndex = activeInterest ? [...activeInterest.messages].reverse().findIndex((m) => m.role === "assistant") : -1;
   const lastAssistantMsgId = lastAssistantMsgIndex >= 0 ? activeInterest!.messages[activeInterest!.messages.length - 1 - lastAssistantMsgIndex]?.id : null;
 
+  // Loading screen
+  if (initialLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-accent-500 mx-auto mb-4" />
+          <p className="text-body-sm text-surface-400">Loading your interests...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex bg-white">
@@ -359,10 +535,10 @@ export default function AppPage() {
           })}
         </div>
         <div className="p-3 border-t border-surface-200/60">
-          <Link href="/" className="flex items-center gap-2 px-3 py-2 text-body-sm text-surface-400 hover:text-surface-600 transition-colors">
+          <button onClick={handleSignOut} className="flex items-center gap-2 px-3 py-2 text-body-sm text-surface-400 hover:text-surface-600 transition-colors w-full">
             <LogOut className="w-4 h-4" />
-            Back to Home
-          </Link>
+            Sign Out
+          </button>
         </div>
       </div>
 
