@@ -1,1 +1,20 @@
-{"error":{"code":"api_version_disabled","message":"v6 of this endpoint has been disabled. Please use v8 instead.","fid":"0a6c8b1ee1f22b9315795eaa75adcadc5daa2771"}}
+import type { Metadata } from "next";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "Otium — Discover What You Love",
+  description:
+    "AI-powered platform that helps you discover, explore, and master your hobbies and interests.",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body className="min-h-screen">{children}</body>
+    </html>
+  );
+}

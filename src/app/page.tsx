@@ -1,1 +1,19 @@
-{"error":{"code":"api_version_disabled","message":"v6 of this endpoint has been disabled. Please use v8 instead.","fid":"9661aea6da5a46915bcaf6f8626a2729464931f1"}}
+import { Hero } from "@/components/landing/Hero";
+import { Features } from "@/components/landing/Features";
+import { HowItWorks } from "@/components/landing/HowItWorks";
+import { Pricing } from "@/components/landing/Pricing";
+import { Footer } from "@/components/landing/Footer";
+import { Navbar } from "@/components/landing/Navbar";
+
+export default function Home() {
+  return (
+    <main className="min-h-screen">
+      <Navbar />
+      <Hero />
+      <Features />
+      <HowItWorks />
+      <Pricing />
+      <Footer />
+    </main>
+  );
+}

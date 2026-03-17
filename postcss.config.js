@@ -1,1 +1,6 @@
-{"error":{"code":"api_version_disabled","message":"v6 of this endpoint has been disabled. Please use v8 instead.","fid":"81781ed39dc8e6d6521ae1d63a67e46894acc2eb"}}
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};

@@ -1,1 +1,77 @@
-{"error":{"code":"api_version_disabled","message":"v6 of this endpoint has been disabled. Please use v8 instead.","fid":"ec738ef48fdbc42312d7481d0ae316bca38c78ca"}}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply bg-white text-surface-800 font-sans;
+  }
+  ::selection {
+    @apply bg-accent-500/20 text-surface-900;
+  }
+}
+
+@layer components {
+  /* Apple-style primary button */
+  .btn-primary {
+    @apply inline-flex items-center justify-center 
+           bg-accent-600 text-white 
+           px-7 py-3.5 rounded-full 
+           text-body font-medium
+           hover:bg-accent-700 
+           transition-all duration-300 ease-out
+           active:scale-[0.97];
+  }
+  
+  /* Apple-style secondary/ghost button */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center
+           text-accent-600 
+           px-7 py-3.5 rounded-full 
+           text-body font-medium
+           hover:text-accent-700
+           transition-all duration-300 ease-out
+           active:scale-[0.97];
+  }
+
+  /* Apple-style link */
+  .link-arrow {
+    @apply text-accent-600 font-medium inline-flex items-center gap-1
+           hover:gap-2 transition-all duration-300;
+  }
+  .link-arrow::after {
+    content: "›";
+    @apply text-lg;
+  }
+
+  /* Card */
+  .card {
+    @apply bg-surface-100 rounded-apple-lg p-8;
+  }
+
+  /* Input */
+  .input-field {
+    @apply w-full px-4 py-3 rounded-apple 
+           border border-surface-300 
+           bg-white 
+           text-surface-800
+           placeholder:text-surface-400
+           focus:outline-none focus:ring-2 focus:ring-accent-500/30 focus:border-accent-500 
+           transition-all duration-200;
+  }
+
+  /* Section spacing - Apple loves massive whitespace */
+  .section {
+    @apply py-24 md:py-32 px-6;
+  }
+  .section-tight {
+    @apply py-16 md:py-24 px-6;
+  }
+}
