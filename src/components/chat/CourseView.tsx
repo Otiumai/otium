@@ -1,13 +1,13 @@
 "use client";
 
-import { Course, CourseWeek, CourseTask } from "@/types";
+import { Course, CourseDay, CourseTask } from "@/types";
 import { CheckCircle, Circle, Play, BookOpen, Wrench, Compass, ExternalLink, ChevronDown, ChevronRight, Lock } from "lucide-react";
 import { useState } from "react";
 
 interface CourseViewProps {
   course: Course;
-  onToggleTask: (weekNumber: number, taskId: string) => void;
-  onRequestMoreWeeks: () => void;
+  onToggleTask: (dayNumber: number, taskId: string) => void;
+  onRequestMoreDays: () => void;
   hideHeader?: boolean;
 }
 
@@ -41,62 +41,76 @@ function getTaskLabel(type: CourseTask["type"]) {
   return labels[type] || type;
 }
 
-function WeekCard({ week, onToggleTask, isCurrentWeek }: { week: CourseWeek; onToggleTask: (taskId: string) => void; isCurrentWeek: boolean }) {
-  const [expanded, setExpanded] = useState(isCurrentWeek);
-  const completedTasks = week.tasks.filter((t) => t.completed).length;
-  const totalTasks = week.tasks.length;
-  const weekProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+function getGroupLabel(dayNumber: number): string {
+  if (dayNumber <= 7) return "Days 1–7: Getting Started";
+  if (dayNumber <= 14) return "Days 8–14: Building Foundation";
+  if (dayNumber <= 21) return "Days 15–21: Growing Skills";
+  return "Days 22–30: Finding Your Style";
+}
+
+function getGroupKey(dayNumber: number): number {
+  if (dayNumber <= 7) return 1;
+  if (dayNumber <= 14) return 2;
+  if (dayNumber <= 21) return 3;
+  return 4;
+}
+
+function DayCard({ day, onToggleTask, isCurrentDay }: { day: CourseDay; onToggleTask: (taskId: string) => void; isCurrentDay: boolean }) {
+  const [expanded, setExpanded] = useState(isCurrentDay);
+  const completedTasks = day.tasks.filter((t) => t.completed).length;
+  const totalTasks = day.tasks.length;
+  const dayProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
   const isComplete = completedTasks === totalTasks && totalTasks > 0;
 
   return (
     <div className={`rounded-apple-lg border transition-all duration-300 ${
-      isCurrentWeek
+      isCurrentDay
         ? "border-accent-200 bg-accent-50/30 shadow-sm"
-        : week.unlocked
+        : day.unlocked
           ? "border-surface-200/60 bg-white"
           : "border-surface-200/40 bg-surface-50 opacity-60"
     }`}>
       <button
-        onClick={() => week.unlocked && setExpanded(!expanded)}
-        className={`w-full flex items-center gap-4 p-4 text-left ${week.unlocked ? "cursor-pointer" : "cursor-default"}`}
+        onClick={() => day.unlocked && setExpanded(!expanded)}
+        className={`w-full flex items-center gap-3 p-3 text-left ${day.unlocked ? "cursor-pointer" : "cursor-default"}`}
       >
-        {/* Week number badge */}
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-body-sm font-bold shrink-0 ${
+        {/* Day number badge */}
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-caption font-bold shrink-0 ${
           isComplete
             ? "bg-emerald-100 text-emerald-600"
-            : isCurrentWeek
+            : isCurrentDay
               ? "bg-accent-100 text-accent-600"
-              : week.unlocked
+              : day.unlocked
                 ? "bg-surface-100 text-surface-600"
                 : "bg-surface-100 text-surface-300"
         }`}>
           {isComplete ? (
-            <CheckCircle className="w-5 h-5" />
-          ) : !week.unlocked ? (
-            <Lock className="w-4 h-4" />
+            <CheckCircle className="w-4 h-4" />
+          ) : !day.unlocked ? (
+            <Lock className="w-3.5 h-3.5" />
           ) : (
-            week.weekNumber
+            day.dayNumber
           )}
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h4 className="text-body-sm font-semibold text-surface-800 truncate">
-              Week {week.weekNumber}: {week.title}
+              {day.title}
             </h4>
-            {isCurrentWeek && (
+            {isCurrentDay && (
               <span className="text-caption px-2 py-0.5 bg-accent-100 text-accent-600 rounded-full font-medium shrink-0">
-                Current
+                Today
               </span>
             )}
           </div>
-          <p className="text-caption text-surface-400 truncate">{week.description}</p>
-          {totalTasks > 0 && week.unlocked && (
-            <div className="flex items-center gap-2 mt-1.5">
-              <div className="flex-1 bg-surface-200 rounded-full h-1.5 max-w-[120px]">
+          <p className="text-caption text-surface-400 truncate">{day.description}</p>
+          {totalTasks > 0 && day.unlocked && (
+            <div className="flex items-center gap-2 mt-1">
+              <div className="flex-1 bg-surface-200 rounded-full h-1 max-w-[100px]">
                 <div
-                  className={`h-1.5 rounded-full transition-all duration-500 ${isComplete ? "bg-emerald-500" : "bg-accent-500"}`}
-                  style={{ width: `${weekProgress}%` }}
+                  className={`h-1 rounded-full transition-all duration-500 ${isComplete ? "bg-emerald-500" : "bg-accent-500"}`}
+                  style={{ width: `${dayProgress}%` }}
                 />
               </div>
               <span className="text-caption text-surface-400">{completedTasks}/{totalTasks}</span>
@@ -104,22 +118,22 @@ function WeekCard({ week, onToggleTask, isCurrentWeek }: { week: CourseWeek; onT
           )}
         </div>
 
-        {week.unlocked && (
+        {day.unlocked && (
           expanded
             ? <ChevronDown className="w-4 h-4 text-surface-400 shrink-0" />
             : <ChevronRight className="w-4 h-4 text-surface-400 shrink-0" />
         )}
       </button>
 
-      {expanded && week.unlocked && (
-        <div className="px-4 pb-4 space-y-4 border-t border-surface-200/40 pt-3 animate-fade-in">
+      {expanded && day.unlocked && (
+        <div className="px-3 pb-3 space-y-3 border-t border-surface-200/40 pt-2.5 animate-fade-in">
           {/* Tasks */}
-          <div className="space-y-2">
-            {week.tasks.map((task) => (
+          <div className="space-y-1.5">
+            {day.tasks.map((task) => (
               <button
                 key={task.id}
                 onClick={() => onToggleTask(task.id)}
-                className={`w-full flex items-start gap-3 p-3 rounded-apple text-left transition-all duration-200 hover:bg-surface-100/80 ${
+                className={`w-full flex items-start gap-3 p-2.5 rounded-apple text-left transition-all duration-200 hover:bg-surface-100/80 ${
                   task.completed ? "opacity-60" : ""
                 }`}
               >
@@ -147,13 +161,13 @@ function WeekCard({ week, onToggleTask, isCurrentWeek }: { week: CourseWeek; onT
           </div>
 
           {/* Resources */}
-          {week.resources && week.resources.length > 0 && (
+          {day.resources && day.resources.length > 0 && (
             <div>
-              <p className="text-caption font-medium text-surface-400 uppercase tracking-wide mb-2">
+              <p className="text-caption font-medium text-surface-400 uppercase tracking-wide mb-1.5">
                 Resources
               </p>
-              <div className="space-y-1.5">
-                {week.resources.map((resource, i) => (
+              <div className="space-y-1">
+                {day.resources.map((resource, i) => (
                   <a
                     key={i}
                     href={resource.url}
@@ -186,10 +200,24 @@ function WeekCard({ week, onToggleTask, isCurrentWeek }: { week: CourseWeek; onT
   );
 }
 
-export default function CourseView({ course, onToggleTask, onRequestMoreWeeks, hideHeader }: CourseViewProps) {
-  const totalTasks = course.weeks.reduce((sum, w) => sum + w.tasks.length, 0);
-  const completedTasks = course.weeks.reduce((sum, w) => sum + w.tasks.filter((t) => t.completed).length, 0);
+export default function CourseView({ course, onToggleTask, onRequestMoreDays, hideHeader }: CourseViewProps) {
+  const totalTasks = course.days.reduce((sum, d) => sum + d.tasks.length, 0);
+  const completedTasks = course.days.reduce((sum, d) => sum + d.tasks.filter((t) => t.completed).length, 0);
   const overallProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  // Group days into phases
+  const groups: { key: number; label: string; days: CourseDay[] }[] = [];
+  const groupMap = new Map<number, CourseDay[]>();
+
+  for (const day of course.days) {
+    const gk = getGroupKey(day.dayNumber);
+    if (!groupMap.has(gk)) groupMap.set(gk, []);
+    groupMap.get(gk)!.push(day);
+  }
+
+  for (const [key, days] of groupMap) {
+    groups.push({ key, label: getGroupLabel(days[0].dayNumber), days });
+  }
 
   return (
     <div className="space-y-4">
@@ -212,30 +240,37 @@ export default function CourseView({ course, onToggleTask, onRequestMoreWeeks, h
         <div className="flex items-center gap-4 mt-3 text-caption text-surface-400">
           <span>{completedTasks} of {totalTasks} tasks done</span>
           <span>•</span>
-          <span>Week {course.currentWeek} of {course.totalWeeks}</span>
+          <span>Day {course.currentDay} of {course.totalDays}</span>
         </div>
       </div>
       )}
 
-      {/* Week cards */}
-      <div className="space-y-3">
-        {course.weeks.map((week) => (
-          <WeekCard
-            key={week.weekNumber}
-            week={week}
-            onToggleTask={(taskId) => onToggleTask(week.weekNumber, taskId)}
-            isCurrentWeek={week.weekNumber === course.currentWeek}
-          />
-        ))}
-      </div>
+      {/* Day cards grouped by phase */}
+      {groups.map((group) => (
+        <div key={group.key} className="space-y-2">
+          <h4 className="text-caption font-semibold text-surface-400 uppercase tracking-wide px-1">
+            {group.label}
+          </h4>
+          <div className="space-y-2">
+            {group.days.map((day) => (
+              <DayCard
+                key={day.dayNumber}
+                day={day}
+                onToggleTask={(taskId) => onToggleTask(day.dayNumber, taskId)}
+                isCurrentDay={day.dayNumber === course.currentDay}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
 
-      {/* Load more weeks */}
-      {course.weeks.length < course.totalWeeks && (
+      {/* Load more days */}
+      {course.days.length < course.totalDays && (
         <button
-          onClick={onRequestMoreWeeks}
+          onClick={onRequestMoreDays}
           className="w-full py-3 text-body-sm font-medium text-accent-600 hover:text-accent-700 bg-accent-50 hover:bg-accent-100 rounded-apple transition-colors"
         >
-          Generate Next Weeks →
+          Generate Next Days →
         </button>
       )}
     </div>

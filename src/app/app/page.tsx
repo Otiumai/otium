@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Plus, Trash2, ChevronRight, LogOut, Sparkles, Target, MessageCircle, Trophy, ArrowRight, Flame, Calendar, BookOpen, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Interest, ChatMessage, QuickReply, Creator, Course, CourseWeek } from "@/types";
+import { Interest, ChatMessage, QuickReply, Creator, Course, CourseDay } from "@/types";
 import { generateId, getInterestEmoji } from "@/lib/ai";
 import { MobiusLogoMark } from "@/components/brand/MobiusLogo";
 import QuickReplyButtons from "@/components/chat/QuickReplyButtons";
@@ -18,12 +18,12 @@ import {
   deleteInterest as dbDeleteInterest,
   saveMessage,
   saveCourse,
-  addWeeksToCourse,
-  updateCourseCurrentWeek,
-  unlockWeek,
+  addDaysToCourse,
+  updateCourseCurrentDay,
+  unlockDay,
   toggleTaskCompletion,
   getCourseId,
-  getWeekId,
+  getDayId,
   updateInterestOnboarding,
 } from "@/lib/db";
 
@@ -204,9 +204,9 @@ export default function AppPage() {
       let structuredData: {
         quickReplies?: QuickReply[];
         creators?: Creator[];
-        courseWeeks?: CourseWeek[];
+        courseDays?: CourseDay[];
         onboardingComplete?: boolean;
-        coursePlan?: { title: string; description: string; totalWeeks: number } | null;
+        coursePlan?: { title: string; description: string; totalDays: number } | null;
       } = {};
 
       const assistantMessage: ChatMessage = {
@@ -263,34 +263,34 @@ export default function AppPage() {
               ...m,
               quickReplies: structuredData.quickReplies || undefined,
               creators: structuredData.creators && structuredData.creators.length > 0 ? structuredData.creators : undefined,
-              courseUpdate: structuredData.courseWeeks && structuredData.courseWeeks.length > 0 ? structuredData.courseWeeks : undefined,
+              courseUpdate: structuredData.courseDays && structuredData.courseDays.length > 0 ? structuredData.courseDays : undefined,
             };
           });
 
           let updatedInterest = { ...i, messages: updatedMessages };
 
           if (structuredData.onboardingComplete && structuredData.coursePlan && !i.course) {
-            const weeks = (structuredData.courseWeeks || []).map((w, idx) => ({
+            const days = (structuredData.courseDays || []).map((w, idx) => ({
               ...w,
-              unlocked: idx < 2,
+              unlocked: idx < 7,
               tasks: w.tasks.map((t) => ({ ...t, completed: false })),
             }));
             updatedInterest.course = {
               title: structuredData.coursePlan.title,
               description: structuredData.coursePlan.description,
-              totalWeeks: structuredData.coursePlan.totalWeeks,
-              currentWeek: 1,
-              weeks,
+              totalDays: structuredData.coursePlan.totalDays,
+              currentDay: 1,
+              days,
               generatedAt: new Date(),
             };
             updatedInterest.onboarding = { ...i.onboarding, completed: true };
-          } else if (i.course && structuredData.courseWeeks && structuredData.courseWeeks.length > 0) {
-            const existingWeekNums = new Set(i.course.weeks.map((w) => w.weekNumber));
-            const newWeeks = structuredData.courseWeeks
-              .filter((w) => !existingWeekNums.has(w.weekNumber))
+          } else if (i.course && structuredData.courseDays && structuredData.courseDays.length > 0) {
+            const existingDayNums = new Set(i.course.days.map((w) => w.dayNumber));
+            const newDays = structuredData.courseDays
+              .filter((w) => !existingDayNums.has(w.dayNumber))
               .map((w) => ({ ...w, unlocked: true, tasks: w.tasks.map((t) => ({ ...t, completed: false })) }));
-            if (newWeeks.length > 0) {
-              updatedInterest.course = { ...i.course, weeks: [...i.course.weeks, ...newWeeks] };
+            if (newDays.length > 0) {
+              updatedInterest.course = { ...i.course, days: [...i.course.days, ...newDays] };
             }
           }
           return updatedInterest;
@@ -303,7 +303,7 @@ export default function AppPage() {
         content: fullContent,
         quickReplies: structuredData.quickReplies || undefined,
         creators: structuredData.creators && structuredData.creators.length > 0 ? structuredData.creators : undefined,
-        courseUpdate: structuredData.courseWeeks && structuredData.courseWeeks.length > 0 ? structuredData.courseWeeks : undefined,
+        courseUpdate: structuredData.courseDays && structuredData.courseDays.length > 0 ? structuredData.courseDays : undefined,
       };
 
       try {
@@ -324,16 +324,16 @@ export default function AppPage() {
       // Persist course if newly created
       if (structuredData.onboardingComplete && structuredData.coursePlan) {
         try {
-          const weeks = (structuredData.courseWeeks || []).map((w, idx) => ({
+          const days = (structuredData.courseDays || []).map((w, idx) => ({
             ...w,
-            unlocked: idx < 2,
+            unlocked: idx < 7,
             tasks: w.tasks.map((t) => ({ ...t, completed: false })),
           }));
           await saveCourse(currentInterest.id, {
             title: structuredData.coursePlan.title,
             description: structuredData.coursePlan.description,
-            totalWeeks: structuredData.coursePlan.totalWeeks,
-            weeks,
+            totalDays: structuredData.coursePlan.totalDays,
+            days,
           });
           await updateInterestOnboarding(currentInterest.id, true);
         } catch (err) {
@@ -343,20 +343,20 @@ export default function AppPage() {
 
       // Persist new weeks added to existing course
       const currentInterestState = interests.find((i) => i.id === currentInterest.id);
-      if (currentInterestState?.course && structuredData.courseWeeks && structuredData.courseWeeks.length > 0 && !structuredData.onboardingComplete) {
+      if (currentInterestState?.course && structuredData.courseDays && structuredData.courseDays.length > 0 && !structuredData.onboardingComplete) {
         try {
           const courseId = await getCourseId(currentInterest.id);
           if (courseId) {
-            const existingWeekNums = new Set(currentInterestState.course.weeks.map((w) => w.weekNumber));
-            const newWeeks = structuredData.courseWeeks
-              .filter((w) => !existingWeekNums.has(w.weekNumber))
+            const existingDayNums = new Set(currentInterestState.course.days.map((w) => w.dayNumber));
+            const newDays = structuredData.courseDays
+              .filter((w) => !existingDayNums.has(w.dayNumber))
               .map((w) => ({ ...w, unlocked: true, tasks: w.tasks.map((t) => ({ ...t, completed: false })) }));
-            if (newWeeks.length > 0) {
-              await addWeeksToCourse(courseId, newWeeks);
+            if (newDays.length > 0) {
+              await addDaysToCourse(courseId, newDays);
             }
           }
         } catch (err) {
-          console.error("Failed to save new weeks:", err);
+          console.error("Failed to save new days:", err);
         }
       }
 
@@ -388,15 +388,15 @@ export default function AppPage() {
     }
   };
 
-  const handleToggleTask = async (weekNumber: number, taskId: string) => {
+  const handleToggleTask = async (dayNumber: number, taskId: string) => {
     if (!activeInterest?.course) return;
 
     let newCompleted = false;
     setInterests((prev) =>
       prev.map((i) => {
         if (i.id !== activeInterest.id || !i.course) return i;
-        const updatedWeeks = i.course.weeks.map((w) => {
-          if (w.weekNumber !== weekNumber) return w;
+        const updatedDays = i.course.days.map((w) => {
+          if (w.dayNumber !== dayNumber) return w;
           return { ...w, tasks: w.tasks.map((t) => {
             if (t.id === taskId) {
               newCompleted = !t.completed;
@@ -405,15 +405,15 @@ export default function AppPage() {
             return t;
           }) };
         });
-        let currentWeek = i.course.currentWeek;
-        const currentWeekData = updatedWeeks.find((w) => w.weekNumber === currentWeek);
-        if (currentWeekData && currentWeekData.tasks.every((t) => t.completed)) {
-          setShowMilestone(currentWeek);
+        let currentDay = i.course.currentDay;
+        const currentDayData = updatedDays.find((w) => w.dayNumber === currentDay);
+        if (currentDayData && currentDayData.tasks.every((t) => t.completed)) {
+          setShowMilestone(currentDay);
           setTimeout(() => setShowMilestone(null), 3000);
-          const nextWeek = updatedWeeks.find((w) => w.weekNumber === currentWeek + 1);
-          if (nextWeek) { currentWeek = nextWeek.weekNumber; nextWeek.unlocked = true; }
+          const nextDay = updatedDays.find((w) => w.dayNumber === currentDay + 1);
+          if (nextDay) { currentDay = nextDay.dayNumber; nextDay.unlocked = true; }
         }
-        return { ...i, course: { ...i.course, weeks: updatedWeeks, currentWeek } };
+        return { ...i, course: { ...i.course, days: updatedDays, currentDay } };
       })
     );
 
@@ -421,20 +421,20 @@ export default function AppPage() {
     try {
       const courseId = await getCourseId(activeInterest.id);
       if (courseId) {
-        const weekId = await getWeekId(courseId, weekNumber);
-        if (weekId) {
-          await toggleTaskCompletion(weekId, taskId, newCompleted);
+        const dayId = await getDayId(courseId, dayNumber);
+        if (dayId) {
+          await toggleTaskCompletion(dayId, taskId, newCompleted);
         }
 
         // Check if week is now complete and persist progression
         const interest = interests.find((i) => i.id === activeInterest.id);
         if (interest?.course) {
-          const weekData = interest.course.weeks.find((w) => w.weekNumber === weekNumber);
-          const allCompleted = weekData?.tasks.every((t) => t.id === taskId ? newCompleted : t.completed);
-          if (allCompleted && weekNumber === interest.course.currentWeek) {
-            const nextWeekNum = weekNumber + 1;
-            await updateCourseCurrentWeek(activeInterest.id, nextWeekNum);
-            await unlockWeek(courseId, nextWeekNum);
+          const dayData = interest.course.days.find((w) => w.dayNumber === dayNumber);
+          const allCompleted = dayData?.tasks.every((t) => t.id === taskId ? newCompleted : t.completed);
+          if (allCompleted && dayNumber === interest.course.currentDay) {
+            const nextDayNum = dayNumber + 1;
+            await updateCourseCurrentDay(activeInterest.id, nextDayNum);
+            await unlockDay(courseId, nextDayNum);
           }
         }
       }
@@ -443,28 +443,28 @@ export default function AppPage() {
     }
   };
 
-  const handleRequestMoreWeeks = () => {
+  const handleRequestMoreDays = () => {
     if (!activeInterest?.course) return;
-    const lastWeek = activeInterest.course.weeks[activeInterest.course.weeks.length - 1];
-    sendMessage(`Generate weeks ${lastWeek.weekNumber + 1} through ${lastWeek.weekNumber + 4} of my course.`, true);
+    const lastDay = activeInterest.course.days[activeInterest.course.days.length - 1];
+    sendMessage(`Generate days ${lastDay.dayNumber + 1} through ${lastDay.dayNumber + 7} of my course.`, true);
   };
 
   // Computed values
   const course = activeInterest?.course;
   const courseProgress = course
     ? (() => {
-        const total = course.weeks.reduce((s, w) => s + w.tasks.length, 0);
-        const done = course.weeks.reduce((s, w) => s + w.tasks.filter((t) => t.completed).length, 0);
+        const total = course.days.reduce((s, w) => s + w.tasks.length, 0);
+        const done = course.days.reduce((s, w) => s + w.tasks.filter((t) => t.completed).length, 0);
         return total > 0 ? Math.round((done / total) * 100) : 0;
       })()
     : 0;
 
-  const completedTaskCount = course ? course.weeks.reduce((s, w) => s + w.tasks.filter((t) => t.completed).length, 0) : 0;
-  const totalTaskCount = course ? course.weeks.reduce((s, w) => s + w.tasks.length, 0) : 0;
+  const completedTaskCount = course ? course.days.reduce((s, w) => s + w.tasks.filter((t) => t.completed).length, 0) : 0;
+  const totalTaskCount = course ? course.days.reduce((s, w) => s + w.tasks.length, 0) : 0;
 
-  const currentWeekData = course ? course.weeks.find((w) => w.weekNumber === course.currentWeek) : null;
-  const nextTask = currentWeekData ? currentWeekData.tasks.find((t) => !t.completed) : null;
-  const completedWeeks = course ? course.weeks.filter((w) => w.tasks.length > 0 && w.tasks.every((t) => t.completed)).length : 0;
+  const currentDayData = course ? course.days.find((w) => w.dayNumber === course.currentDay) : null;
+  const nextTask = currentDayData ? currentDayData.tasks.find((t) => !t.completed) : null;
+  const completedDays = course ? course.days.filter((w) => w.tasks.length > 0 && w.tasks.every((t) => t.completed)).length : 0;
 
   const lastAssistantMsgIndex = activeInterest ? [...activeInterest.messages].reverse().findIndex((m) => m.role === "assistant") : -1;
   const lastAssistantMsgId = lastAssistantMsgIndex >= 0 ? activeInterest!.messages[activeInterest!.messages.length - 1 - lastAssistantMsgIndex]?.id : null;
@@ -488,8 +488,8 @@ export default function AppPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-apple-lg p-8 text-center shadow-xl max-w-sm mx-4">
             <div className="text-5xl mb-4">🎉</div>
-            <h3 className="text-title font-display text-surface-900 mb-2">Week {showMilestone} Complete!</h3>
-            <p className="text-body-sm text-surface-400">Amazing progress. Keep going — your next week is unlocked!</p>
+            <h3 className="text-title font-display text-surface-900 mb-2">Day {showMilestone} Complete!</h3>
+            <p className="text-body-sm text-surface-400">Amazing progress. Keep going — your next day is unlocked!</p>
           </div>
         </div>
       )}
@@ -511,7 +511,7 @@ export default function AppPage() {
             <p className="text-surface-400 text-body-sm text-center mt-8 px-4">Your interests will appear here.</p>
           )}
           {interests.map((interest) => {
-            const prog = interest.course ? (() => { const t = interest.course.weeks.reduce((s, w) => s + w.tasks.length, 0); const d = interest.course.weeks.reduce((s, w) => s + w.tasks.filter((t2) => t2.completed).length, 0); return t > 0 ? Math.round((d / t) * 100) : 0; })() : 0;
+            const prog = interest.course ? (() => { const t = interest.course.days.reduce((s, w) => s + w.tasks.length, 0); const d = interest.course.days.reduce((s, w) => s + w.tasks.filter((t2) => t2.completed).length, 0); return t > 0 ? Math.round((d / t) * 100) : 0; })() : 0;
             return (
               <div key={interest.id} className={`group flex items-center gap-3 px-3 py-2.5 rounded-apple cursor-pointer transition-all duration-200 ${activeInterestId === interest.id ? "bg-white shadow-sm text-surface-900" : "hover:bg-white/60 text-surface-600"}`} onClick={() => { setActiveInterestId(interest.id); }}>
                 <span className="text-base">{interest.emoji}</span>
@@ -684,21 +684,21 @@ export default function AppPage() {
                     </div>
                     <div className="flex items-center gap-6 text-caption">
                       <span className="flex items-center gap-1.5 text-surface-300"><BookOpen className="w-3.5 h-3.5" /> {completedTaskCount}/{totalTaskCount} tasks</span>
-                      <span className="flex items-center gap-1.5 text-surface-300"><Trophy className="w-3.5 h-3.5" /> {completedWeeks} weeks done</span>
-                      <span className="flex items-center gap-1.5 text-surface-300"><Calendar className="w-3.5 h-3.5" /> Week {course.currentWeek}</span>
+                      <span className="flex items-center gap-1.5 text-surface-300"><Trophy className="w-3.5 h-3.5" /> {completedDays} days done</span>
+                      <span className="flex items-center gap-1.5 text-surface-300"><Calendar className="w-3.5 h-3.5" /> Day {course.currentDay}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Up Next Card */}
-                {nextTask && currentWeekData && (
+                {nextTask && currentDayData && (
                   <div className="bg-accent-50/50 border border-accent-200/60 rounded-apple-lg p-5">
                     <div className="flex items-center gap-2 mb-3">
                       <Flame className="w-4 h-4 text-accent-600" />
                       <span className="text-caption font-semibold text-accent-600 uppercase tracking-wide">Up Next</span>
                     </div>
                     <div className="flex items-start gap-3">
-                      <button onClick={() => handleToggleTask(currentWeekData.weekNumber, nextTask.id)} className="mt-0.5 w-6 h-6 rounded-full border-2 border-accent-300 hover:border-accent-500 transition-colors shrink-0" />
+                      <button onClick={() => handleToggleTask(currentDayData.dayNumber, nextTask.id)} className="mt-0.5 w-6 h-6 rounded-full border-2 border-accent-300 hover:border-accent-500 transition-colors shrink-0" />
                       <div>
                         <p className="text-body font-semibold text-surface-800">{nextTask.label}</p>
                         {nextTask.description && <p className="text-body-sm text-surface-400 mt-0.5">{nextTask.description}</p>}
@@ -726,8 +726,8 @@ export default function AppPage() {
                   </button>
                 </div>
 
-                {/* Course Weeks */}
-                <CourseView course={course} onToggleTask={handleToggleTask} onRequestMoreWeeks={handleRequestMoreWeeks} hideHeader />
+                {/* Course Days */}
+                <CourseView course={course} onToggleTask={handleToggleTask} onRequestMoreDays={handleRequestMoreDays} hideHeader />
 
                 {/* Journey chat input */}
                 <div className="bg-surface-100 rounded-apple-lg p-4">

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { createClient } from "./supabase";
-import { Interest, ChatMessage, Course, CourseWeek, CourseTask, Creator, QuickReply } from "@/types";
+import { Interest, ChatMessage, Course, CourseDay, CourseTask, Creator, QuickReply } from "@/types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -38,7 +38,7 @@ export async function fetchInterests(userId: string): Promise<Interest[]> {
       timestamp: new Date(m.created_at),
       quickReplies: m.quick_replies as QuickReply[] | undefined,
       creators: m.creators as Creator[] | undefined,
-      courseUpdate: m.course_update as CourseWeek[] | undefined,
+      courseUpdate: m.course_update as CourseDay[] | undefined,
     }));
 
     let course: Course | null = null;
@@ -51,26 +51,26 @@ export async function fetchInterests(userId: string): Promise<Interest[]> {
 
     if (courseData) {
       const cd = courseData as any;
-      const { data: weeksData } = await db()
+      const { data: daysData } = await db()
         .from("course_weeks")
         .select("*")
         .eq("course_id", cd.id)
         .order("week_number", { ascending: true });
 
-      const weeks: CourseWeek[] = [];
-      for (const w of ((weeksData || []) as any[])) {
+      const days: CourseDay[] = [];
+      for (const w of ((daysData || []) as any[])) {
         const { data: tasksData } = await db()
           .from("course_tasks")
           .select("*")
           .eq("week_id", w.id)
           .order("sort_order", { ascending: true });
 
-        weeks.push({
-          weekNumber: w.week_number,
+        days.push({
+          dayNumber: w.week_number,
           title: w.title,
           description: w.description,
           unlocked: w.unlocked,
-          resources: (w.resources as CourseWeek["resources"]) || [],
+          resources: (w.resources as CourseDay["resources"]) || [],
           tasks: ((tasksData || []) as any[]).map((t: any) => ({
             id: t.task_id_client,
             label: t.label,
@@ -84,9 +84,9 @@ export async function fetchInterests(userId: string): Promise<Interest[]> {
       course = {
         title: cd.title,
         description: cd.description,
-        totalWeeks: cd.total_weeks,
-        currentWeek: cd.current_week,
-        weeks,
+        totalDays: cd.total_weeks,
+        currentDay: cd.current_week,
+        days,
         generatedAt: new Date(cd.created_at),
       };
     }
@@ -173,7 +173,7 @@ export async function updateMessage(
     content?: string;
     quickReplies?: QuickReply[];
     creators?: Creator[];
-    courseUpdate?: CourseWeek[];
+    courseUpdate?: CourseDay[];
   }
 ): Promise<void> {
   const updateData: Record<string, unknown> = {};
@@ -199,8 +199,8 @@ export async function saveCourse(
   course: {
     title: string;
     description: string;
-    totalWeeks: number;
-    weeks: CourseWeek[];
+    totalDays: number;
+    days: CourseDay[];
   }
 ): Promise<string> {
   const { data: courseData, error: courseError } = await db()
@@ -209,7 +209,7 @@ export async function saveCourse(
       interest_id: interestId,
       title: course.title,
       description: course.description,
-      total_weeks: course.totalWeeks,
+      total_weeks: course.totalDays,
       current_week: 1,
     } as any)
     .select("id")
@@ -218,32 +218,32 @@ export async function saveCourse(
   if (courseError) throw courseError;
   const courseId = (courseData as any).id;
 
-  for (const week of course.weeks) {
-    await saveWeekWithTasks(courseId, week);
+  for (const day of course.days) {
+    await saveDayWithTasks(courseId, day);
   }
 
   return courseId;
 }
 
-async function saveWeekWithTasks(courseId: string, week: CourseWeek): Promise<void> {
-  const { data: weekData, error: weekError } = await db()
+async function saveDayWithTasks(courseId: string, day: CourseDay): Promise<void> {
+  const { data: dayData, error: dayError } = await db()
     .from("course_weeks")
     .insert({
       course_id: courseId,
-      week_number: week.weekNumber,
-      title: week.title,
-      description: week.description,
-      unlocked: week.unlocked,
-      resources: week.resources ? JSON.parse(JSON.stringify(week.resources)) : null,
+      week_number: day.dayNumber,
+      title: day.title,
+      description: day.description,
+      unlocked: day.unlocked,
+      resources: day.resources ? JSON.parse(JSON.stringify(day.resources)) : null,
     } as any)
     .select("id")
     .single();
 
-  if (weekError) throw weekError;
+  if (dayError) throw dayError;
 
-  if (week.tasks.length > 0) {
-    const taskInserts = week.tasks.map((t, idx) => ({
-      week_id: (weekData as any).id,
+  if (day.tasks.length > 0) {
+    const taskInserts = day.tasks.map((t, idx) => ({
+      week_id: (dayData as any).id,
       task_id_client: t.id,
       label: t.label,
       description: t.description || null,
@@ -260,36 +260,36 @@ async function saveWeekWithTasks(courseId: string, week: CourseWeek): Promise<vo
   }
 }
 
-export async function addWeeksToCourse(
+export async function addDaysToCourse(
   courseId: string,
-  weeks: CourseWeek[]
+  days: CourseDay[]
 ): Promise<void> {
-  for (const week of weeks) {
-    await saveWeekWithTasks(courseId, week);
+  for (const day of days) {
+    await saveDayWithTasks(courseId, day);
   }
 }
 
-export async function updateCourseCurrentWeek(
+export async function updateCourseCurrentDay(
   interestId: string,
-  currentWeek: number
+  currentDay: number
 ): Promise<void> {
   const { error } = await db()
     .from("courses")
-    .update({ current_week: currentWeek } as any)
+    .update({ current_week: currentDay } as any)
     .eq("interest_id", interestId);
 
   if (error) throw error;
 }
 
-export async function unlockWeek(
+export async function unlockDay(
   courseId: string,
-  weekNumber: number
+  dayNumber: number
 ): Promise<void> {
   const { error } = await db()
     .from("course_weeks")
     .update({ unlocked: true } as any)
     .eq("course_id", courseId)
-    .eq("week_number", weekNumber);
+    .eq("week_number", dayNumber);
 
   if (error) throw error;
 }
@@ -312,15 +312,15 @@ export async function toggleTaskCompletion(
   if (error) throw error;
 }
 
-export async function getWeekId(
+export async function getDayId(
   courseId: string,
-  weekNumber: number
+  dayNumber: number
 ): Promise<string | null> {
   const { data, error } = await db()
     .from("course_weeks")
     .select("id")
     .eq("course_id", courseId)
-    .eq("week_number", weekNumber)
+    .eq("week_number", dayNumber)
     .single();
 
   if (error) return null;

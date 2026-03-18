@@ -98,10 +98,64 @@ function cleanForSpeech(text: string): string {
     .trim();
 }
 
+async function speakWithElevenLabs(text: string): Promise<HTMLAudioElement | null> {
+  try {
+    const cleaned = cleanForSpeech(text);
+    if (!cleaned) return null;
+
+    const response = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: cleaned }),
+    });
+
+    if (!response.ok) {
+      // 501 means no API key configured — expected fallback case
+      if (response.status === 501) return null;
+      console.warn("ElevenLabs TTS failed:", response.status);
+      return null;
+    }
+
+    const audioBlob = await response.blob();
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const audio = new Audio(audioUrl);
+    return audio;
+  } catch (err) {
+    console.warn("ElevenLabs TTS error:", err);
+    return null;
+  }
+}
+
+function speakWithBrowserTTS(text: string, onStart: () => void, onEnd: () => void): void {
+  if (!("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+
+  const cleaned = cleanForSpeech(text);
+  if (!cleaned) return;
+
+  const utterance = new SpeechSynthesisUtterance(cleaned);
+  utterance.rate = 1.0;
+  utterance.pitch = 1.0;
+  utterance.volume = 1.0;
+
+  const voices = window.speechSynthesis.getVoices();
+  const preferred = voices.find(
+    (v) => v.name.includes("Samantha") || v.name.includes("Google UK English Female") || v.name.includes("Microsoft Zira") || v.name.includes("Karen")
+  );
+  if (preferred) utterance.voice = preferred;
+
+  utterance.onstart = onStart;
+  utterance.onend = onEnd;
+  utterance.onerror = onEnd;
+
+  window.speechSynthesis.speak(utterance);
+}
+
 export function useTextToSpeech(): UseTextToSpeechReturn {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [supported, setSupported] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(false);
+  const activeAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     try {
@@ -111,39 +165,64 @@ export function useTextToSpeech(): UseTextToSpeechReturn {
     }
   }, []);
 
-  const speak = useCallback((text: string) => {
-    if (!("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-
-    const cleaned = cleanForSpeech(text);
-    if (!cleaned) return;
-
-    const utterance = new SpeechSynthesisUtterance(cleaned);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-
-    const voices = window.speechSynthesis.getVoices();
-    const preferred = voices.find(
-      (v) => v.name.includes("Samantha") || v.name.includes("Google UK English Female") || v.name.includes("Microsoft Zira") || v.name.includes("Karen")
-    );
-    if (preferred) utterance.voice = preferred;
-
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-
-    window.speechSynthesis.speak(utterance);
-  }, []);
-
   const stop = useCallback(() => {
+    // Stop ElevenLabs audio if playing
+    if (activeAudioRef.current) {
+      activeAudioRef.current.pause();
+      activeAudioRef.current.currentTime = 0;
+      activeAudioRef.current = null;
+    }
+    // Stop browser TTS if playing
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
-      setIsSpeaking(false);
     }
+    setIsSpeaking(false);
   }, []);
 
-  return { speak, stop, isSpeaking, supported, autoSpeak, setAutoSpeak };
+  const speak = useCallback(async (text: string) => {
+    // Stop any current speech first
+    stop();
+
+    // Try ElevenLabs first
+    const audio = await speakWithElevenLabs(text);
+    if (audio) {
+      activeAudioRef.current = audio;
+      audio.onplay = () => setIsSpeaking(true);
+      audio.onended = () => {
+        setIsSpeaking(false);
+        activeAudioRef.current = null;
+      };
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        activeAudioRef.current = null;
+        // Fall back to browser TTS on playback error
+        speakWithBrowserTTS(
+          text,
+          () => setIsSpeaking(true),
+          () => setIsSpeaking(false)
+        );
+      };
+      audio.play().catch(() => {
+        // Autoplay blocked or other error — fall back to browser TTS
+        activeAudioRef.current = null;
+        speakWithBrowserTTS(
+          text,
+          () => setIsSpeaking(true),
+          () => setIsSpeaking(false)
+        );
+      });
+      return;
+    }
+
+    // Fall back to browser TTS
+    speakWithBrowserTTS(
+      text,
+      () => setIsSpeaking(true),
+      () => setIsSpeaking(false)
+    );
+  }, [stop]);
+
+  return { speak, stop, isSpeaking, supported: true, autoSpeak, setAutoSpeak };
 }
 
 // ============ Mic Button Component ============

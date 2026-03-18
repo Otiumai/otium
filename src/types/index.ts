@@ -16,7 +16,7 @@ export interface ChatMessage {
   timestamp: Date;
   quickReplies?: QuickReply[];
   creators?: Creator[];
-  courseUpdate?: CourseWeek[];
+  courseUpdate?: CourseDay[];
 }
 
 export interface QuickReply {
@@ -45,14 +45,14 @@ export interface OnboardingAnswer {
 export interface Course {
   title: string;
   description: string;
-  totalWeeks: number;
-  currentWeek: number;
-  weeks: CourseWeek[];
+  totalDays: number;
+  currentDay: number;
+  days: CourseDay[];
   generatedAt: Date;
 }
 
-export interface CourseWeek {
-  weekNumber: number;
+export interface CourseDay {
+  dayNumber: number;
   title: string;
   description: string;
   tasks: CourseTask[];
