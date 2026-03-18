@@ -308,6 +308,11 @@ When you have enough context about someone's interest, goals, time, and experien
 - Reference REAL creators, channels, and resources with actual URLs (youtube.com/@channelname format)
 - Build on the previous day naturally
 - Stay achievable — nobody should feel overwhelmed
+- **Include 1-2 relevant YouTube video links** for each day's topic. Use either:
+  - Direct links to specific videos by real creators when you know them (e.g. youtube.com/@PeterMcKinnon/video-title)
+  - YouTube search links when you want to surface the best results for a topic: https://www.youtube.com/results?search_query=beginner+pottery+centering+clay (URL-encode the query)
+  - Label these clearly, e.g. "🎥 Watch: Centering Clay for Beginners" — they should feel like curated recommendations, not generic links
+  - Prefer specific creator videos when you know good ones; fall back to search links for niche or day-specific topics
 
 **Recommend REAL creators** (use their actual YouTube/Instagram handles):
 - Photography: Peter McKinnon (youtube.com/@PeterMcKinnon), Jamie Windsor (youtube.com/@jamiewindsor), Sean Tucker (youtube.com/@SeanTucker)
@@ -338,7 +343,7 @@ Extract:
 1. "quickReplies" - If the AI asks a question with clear options, create 2-5 clickable options. Each needs: id (short unique string), label (the option text), emoji (relevant emoji). ALWAYS try to generate helpful quick replies based on what the AI is asking or suggesting.
 2. "creators" - If real creators/channels are mentioned, extract: name, platform (youtube/instagram/tiktok/podcast/website/twitter/twitch/other), url (real URL), description (one line about them).
 3. "coursePlan" - If a structured day-by-day plan/roadmap/course is laid out, extract: title, description, totalDays (typically 30).
-4. "courseDays" - If daily content exists, extract each day with: dayNumber, title, description, tasks (array with id/label/description/type where type is learn|practice|create|explore, completed always false), resources (array with title/url/type where type is video|article|course|tool|community, plus platform string), unlocked (true for first 7 days, false for rest).
+4. "courseDays" - If daily content exists, extract each day with: dayNumber, title, description, tasks (array with id/label/description/type where type is learn|practice|create|explore, completed always false), resources (array with title/url/type where type is video|article|course|tool|community, plus platform string), unlocked (true for first 7 days, false for rest). IMPORTANT: For each day, extract ALL video links mentioned — whether they're direct YouTube links, YouTube search links (youtube.com/results?search_query=...), or creator channel links. Set type="video" and platform="YouTube" for any YouTube URL. Every day should ideally have at least 1 video resource.
 5. "onboardingComplete" - true ONLY if a full course/roadmap was generated in this response.
 
 Return format:

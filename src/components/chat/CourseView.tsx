@@ -160,23 +160,51 @@ function DayCard({ day, onToggleTask, isCurrentDay }: { day: CourseDay; onToggle
             ))}
           </div>
 
-          {/* Resources */}
-          {day.resources && day.resources.length > 0 && (
+          {/* Video Resources */}
+          {day.resources && day.resources.filter(r => r.type === "video").length > 0 && (
+            <div>
+              <p className="text-caption font-medium text-surface-400 uppercase tracking-wide mb-1.5">
+                🎥 Videos
+              </p>
+              <div className="space-y-1">
+                {day.resources.filter(r => r.type === "video").map((resource, i) => (
+                  <a
+                    key={`video-${i}`}
+                    href={resource.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2.5 p-2.5 rounded-apple bg-red-50/60 hover:bg-red-50 border border-red-100/60 transition-colors group"
+                  >
+                    <span className="text-body-sm">▶️</span>
+                    <span className="text-body-sm text-surface-700 group-hover:text-red-600 transition-colors flex-1 truncate font-medium">
+                      {resource.title}
+                    </span>
+                    {resource.platform && (
+                      <span className="text-caption text-red-300">{resource.platform}</span>
+                    )}
+                    <ExternalLink className="w-3 h-3 text-red-300 group-hover:text-red-500 shrink-0" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Other Resources */}
+          {day.resources && day.resources.filter(r => r.type !== "video").length > 0 && (
             <div>
               <p className="text-caption font-medium text-surface-400 uppercase tracking-wide mb-1.5">
                 Resources
               </p>
               <div className="space-y-1">
-                {day.resources.map((resource, i) => (
+                {day.resources.filter(r => r.type !== "video").map((resource, i) => (
                   <a
-                    key={i}
+                    key={`resource-${i}`}
                     href={resource.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 p-2 rounded-apple hover:bg-surface-100 transition-colors group"
                   >
                     <span className="text-caption">{
-                      resource.type === "video" ? "▶️" :
                       resource.type === "article" ? "📄" :
                       resource.type === "course" ? "🎓" :
                       resource.type === "tool" ? "🔧" :
