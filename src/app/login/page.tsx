@@ -14,7 +14,6 @@ function LoginForm() {
   const { signIn, signInWithGoogle } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const searchParams = useSearchParams();
 
   const authError = searchParams.get("error");
 
