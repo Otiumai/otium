@@ -344,7 +344,7 @@ Extract:
 2. "creators" - If real creators/channels are mentioned, extract: name, platform (youtube/instagram/tiktok/podcast/website/twitter/twitch/other), url (real URL), description (one line about them).
 3. "coursePlan" - If a structured day-by-day plan/roadmap/course is laid out, extract: title, description, totalDays (typically 30).
 4. "courseDays" - If daily content exists, extract each day with: dayNumber, title, description, tasks (array with id/label/description/type where type is learn|practice|create|explore, completed always false), resources (array with title/url/type where type is video|article|course|tool|community, plus platform string), unlocked (true for first 7 days, false for rest). IMPORTANT: For each day, extract ALL video links mentioned — whether they're direct YouTube links, YouTube search links (youtube.com/results?search_query=...), or creator channel links. Set type="video" and platform="YouTube" for any YouTube URL. Every day should ideally have at least 1 video resource.
-5. "onboardingComplete" - true ONLY if a full course/roadmap was generated in this response.
+5. "onboardingComplete" - true if the response contains a structured day-by-day plan/roadmap/course (look for numbered days, "Day 1", "Day 2", etc., or "30-Day Plan", "Your Journey", etc.). If courseDays has entries, this should almost always be true.
 
 Return format:
 {
