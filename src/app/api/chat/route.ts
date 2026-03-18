@@ -124,6 +124,11 @@ export async function POST(request: NextRequest) {
           // Falls back gracefully if no OpenAI key
           if (openaiKey) {
             try {
+              // Truncate very long responses to avoid token limits
+              const truncatedResponse = fullResponse.length > 12000 
+                ? fullResponse.slice(0, 12000) + "\n\n[TRUNCATED - extract from what's shown above]"
+                : fullResponse;
+              
               const extractResponse = await fetch("https://api.openai.com/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -133,10 +138,10 @@ export async function POST(request: NextRequest) {
                 body: JSON.stringify({
                   model: "gpt-4o-mini",
                   messages: [
-                    { role: "user", content: EXTRACT_PROMPT + fullResponse },
+                    { role: "user", content: EXTRACT_PROMPT + truncatedResponse },
                   ],
                   temperature: 0,
-                  max_tokens: 3000,
+                  max_tokens: 16000,
                   response_format: { type: "json_object" },
                 }),
               });
@@ -151,12 +156,15 @@ export async function POST(request: NextRequest) {
                       `data: ${JSON.stringify({ structured })}\n\n`
                     )
                   );
-                } catch {
-                  // Parse failed, no big deal
+                } catch (parseErr) {
+                  console.error("Structured data parse failed:", parseErr, "Raw:", extractContent?.slice(0, 200));
                 }
+              } else {
+                const errText = await extractResponse.text();
+                console.error("OpenAI extraction failed:", extractResponse.status, errText.slice(0, 500));
               }
-            } catch {
-              // Extraction failed, conversation still works
+            } catch (extractErr) {
+              console.error("Extraction call error:", extractErr);
             }
           }
 
