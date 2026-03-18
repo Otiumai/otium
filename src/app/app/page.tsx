@@ -156,11 +156,13 @@ export default function AppPage() {
       setActiveInterestId(tempId);
 
       // Save to DB and get real ID (only if logged in)
-      if (user) { try {
-        const dbId = await createInterest(user?.id, currentInterest.name, currentInterest.emoji);
-        currentInterest = { ...currentInterest, id: dbId };
-        setInterests((prev) => prev.map((i) => (i.id === tempId ? { ...i, id: dbId } : i)));
-        setActiveInterestId(dbId);
+      try {
+        if (user) {
+          const dbId = await createInterest(user.id, currentInterest.name, currentInterest.emoji);
+          currentInterest = { ...currentInterest, id: dbId };
+          setInterests((prev) => prev.map((i) => (i.id === tempId ? { ...i, id: dbId } : i)));
+          setActiveInterestId(dbId);
+        }
       } catch (err) {
         console.error("Failed to create interest:", err);
       }
