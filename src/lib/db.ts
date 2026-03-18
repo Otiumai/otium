@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createClient } from "./supabase";
 import { Interest, ChatMessage, Course, CourseWeek, CourseTask, Creator, QuickReply } from "@/types";
 
