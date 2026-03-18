@@ -308,11 +308,11 @@ When you have enough context about someone's interest, goals, time, and experien
 - Reference REAL creators, channels, and resources with actual URLs (youtube.com/@channelname format)
 - Build on the previous day naturally
 - Stay achievable — nobody should feel overwhelmed
-- **Include 1-2 relevant YouTube video links** for each day's topic. Use either:
-  - Direct links to specific videos by real creators when you know them (e.g. youtube.com/@PeterMcKinnon/video-title)
-  - YouTube search links when you want to surface the best results for a topic: https://www.youtube.com/results?search_query=beginner+pottery+centering+clay (URL-encode the query)
-  - Label these clearly, e.g. "🎥 Watch: Centering Clay for Beginners" — they should feel like curated recommendations, not generic links
-  - Prefer specific creator videos when you know good ones; fall back to search links for niche or day-specific topics
+- **Include 1-2 relevant YouTube video links** for each day's topic. This is REQUIRED for every single day. Format them clearly so they stand out:
+  - 🎥 **Watch:** [Title of video](https://www.youtube.com/results?search_query=url+encoded+topic) — brief description
+  - Use direct links to specific videos by real creators when you know them (e.g. https://youtube.com/@PeterMcKinnon)
+  - Use YouTube search links as fallback: https://www.youtube.com/results?search_query=beginner+pottery+centering+clay
+  - EVERY day must have at least one 🎥 video link — no exceptions
 
 **Recommend REAL creators** (use their actual YouTube/Instagram handles):
 - Photography: Peter McKinnon (youtube.com/@PeterMcKinnon), Jamie Windsor (youtube.com/@jamiewindsor), Sean Tucker (youtube.com/@SeanTucker)
@@ -354,6 +354,24 @@ Return format:
   "courseDays": [],
   "onboardingComplete": false
 }
+
+Example courseDays entry with resources:
+{
+  "dayNumber": 1,
+  "title": "Your First Shot",
+  "description": "Get familiar with your camera and take your first intentional photos",
+  "tasks": [
+    {"id": "d1t1", "label": "Watch a beginner overview video", "description": "Get oriented with the basics", "type": "learn", "completed": false},
+    {"id": "d1t2", "label": "Take 10 photos around your home", "description": "Don't overthink it — just shoot", "type": "practice", "completed": false}
+  ],
+  "resources": [
+    {"title": "Photography Basics for Beginners", "url": "https://www.youtube.com/results?search_query=photography+basics+for+complete+beginners", "type": "video", "platform": "YouTube"},
+    {"title": "Peter McKinnon - How to Take Better Photos", "url": "https://youtube.com/@PeterMcKinnon", "type": "video", "platform": "YouTube"}
+  ],
+  "unlocked": true
+}
+
+CRITICAL: Every courseDay MUST include a "resources" array with at least 1 video resource. If the AI response mentions YouTube links, creator channels, or video recommendations for a day, extract them. If none are explicitly mentioned for a day, generate a YouTube search URL based on the day's topic: https://www.youtube.com/results?search_query=<url-encoded-topic>
 
 AI Response:
 `;
