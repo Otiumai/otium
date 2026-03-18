@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Plus, Trash2, ChevronRight, LogOut, Sparkles, Target, MessageCircle, Trophy, ArrowRight, Flame, Calendar, BookOpen, Volume2, Loader2 } from "lucide-react";
+import { Send, Plus, Trash2, ChevronRight, LogOut, Sparkles, Target, MessageCircle, Trophy, ArrowRight, Flame, Calendar, BookOpen, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Interest, ChatMessage, QuickReply, Creator, Course, CourseWeek } from "@/types";
@@ -17,7 +17,6 @@ import {
   createInterest,
   deleteInterest as dbDeleteInterest,
   saveMessage,
-  updateMessage,
   saveCourse,
   addWeeksToCourse,
   updateCourseCurrentWeek,

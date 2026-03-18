@@ -1,14 +1,18 @@
 import { createClient } from "./supabase";
 import { Interest, ChatMessage, Course, CourseWeek, CourseTask, Creator, QuickReply } from "@/types";
 
-const supabase = createClient();
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+function db() {
+  return createClient();
+}
 
 // ============================================================================
 // INTERESTS
 // ============================================================================
 
 export async function fetchInterests(userId: string): Promise<Interest[]> {
-  const { data: interestsData, error } = await supabase
+  const { data: interestsData, error } = await db()
     .from("interests")
     .select("*")
     .eq("user_id", userId)
@@ -19,15 +23,14 @@ export async function fetchInterests(userId: string): Promise<Interest[]> {
 
   const interests: Interest[] = [];
 
-  for (const row of interestsData) {
-    // Fetch messages for this interest
-    const { data: messagesData } = await supabase
+  for (const row of interestsData as any[]) {
+    const { data: messagesData } = await db()
       .from("messages")
       .select("*")
       .eq("interest_id", row.id)
       .order("created_at", { ascending: true });
 
-    const messages: ChatMessage[] = (messagesData || []).map((m) => ({
+    const messages: ChatMessage[] = ((messagesData || []) as any[]).map((m: any) => ({
       id: m.id,
       role: m.role as "user" | "assistant",
       content: m.content,
@@ -37,25 +40,25 @@ export async function fetchInterests(userId: string): Promise<Interest[]> {
       courseUpdate: m.course_update as CourseWeek[] | undefined,
     }));
 
-    // Fetch course if exists
     let course: Course | null = null;
-    const { data: courseData } = await supabase
+    const { data: courseData } = await db()
       .from("courses")
       .select("*")
       .eq("interest_id", row.id)
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (courseData) {
-      const { data: weeksData } = await supabase
+      const cd = courseData as any;
+      const { data: weeksData } = await db()
         .from("course_weeks")
         .select("*")
-        .eq("course_id", courseData.id)
+        .eq("course_id", cd.id)
         .order("week_number", { ascending: true });
 
       const weeks: CourseWeek[] = [];
-      for (const w of weeksData || []) {
-        const { data: tasksData } = await supabase
+      for (const w of ((weeksData || []) as any[])) {
+        const { data: tasksData } = await db()
           .from("course_tasks")
           .select("*")
           .eq("week_id", w.id)
@@ -66,8 +69,8 @@ export async function fetchInterests(userId: string): Promise<Interest[]> {
           title: w.title,
           description: w.description,
           unlocked: w.unlocked,
-          resources: (w.resources as Course["weeks"][0]["resources"]) || [],
-          tasks: (tasksData || []).map((t) => ({
+          resources: (w.resources as CourseWeek["resources"]) || [],
+          tasks: ((tasksData || []) as any[]).map((t: any) => ({
             id: t.task_id_client,
             label: t.label,
             description: t.description || undefined,
@@ -78,12 +81,12 @@ export async function fetchInterests(userId: string): Promise<Interest[]> {
       }
 
       course = {
-        title: courseData.title,
-        description: courseData.description,
-        totalWeeks: courseData.total_weeks,
-        currentWeek: courseData.current_week,
+        title: cd.title,
+        description: cd.description,
+        totalWeeks: cd.total_weeks,
+        currentWeek: cd.current_week,
         weeks,
-        generatedAt: new Date(courseData.created_at),
+        generatedAt: new Date(cd.created_at),
       };
     }
 
@@ -107,18 +110,18 @@ export async function createInterest(
   name: string,
   emoji: string
 ): Promise<string> {
-  const { data, error } = await supabase
+  const { data, error } = await db()
     .from("interests")
-    .insert({ user_id: userId, name, emoji })
+    .insert({ user_id: userId, name, emoji } as any)
     .select("id")
     .single();
 
   if (error) throw error;
-  return data.id;
+  return (data as any).id;
 }
 
 export async function deleteInterest(interestId: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await db()
     .from("interests")
     .delete()
     .eq("id", interestId);
@@ -130,9 +133,9 @@ export async function updateInterestOnboarding(
   interestId: string,
   completed: boolean
 ): Promise<void> {
-  const { error } = await supabase
+  const { error } = await db()
     .from("interests")
-    .update({ onboarding_completed: completed })
+    .update({ onboarding_completed: completed } as any)
     .eq("id", interestId);
 
   if (error) throw error;
@@ -146,7 +149,7 @@ export async function saveMessage(
   interestId: string,
   message: ChatMessage
 ): Promise<string> {
-  const { data, error } = await supabase
+  const { data, error } = await db()
     .from("messages")
     .insert({
       interest_id: interestId,
@@ -155,12 +158,12 @@ export async function saveMessage(
       quick_replies: message.quickReplies ? JSON.parse(JSON.stringify(message.quickReplies)) : null,
       creators: message.creators ? JSON.parse(JSON.stringify(message.creators)) : null,
       course_update: message.courseUpdate ? JSON.parse(JSON.stringify(message.courseUpdate)) : null,
-    })
+    } as any)
     .select("id")
     .single();
 
   if (error) throw error;
-  return data.id;
+  return (data as any).id;
 }
 
 export async function updateMessage(
@@ -178,9 +181,9 @@ export async function updateMessage(
   if (updates.creators !== undefined) updateData.creators = JSON.parse(JSON.stringify(updates.creators));
   if (updates.courseUpdate !== undefined) updateData.course_update = JSON.parse(JSON.stringify(updates.courseUpdate));
 
-  const { error } = await supabase
+  const { error } = await db()
     .from("messages")
-    .update(updateData)
+    .update(updateData as any)
     .eq("id", messageId);
 
   if (error) throw error;
@@ -199,8 +202,7 @@ export async function saveCourse(
     weeks: CourseWeek[];
   }
 ): Promise<string> {
-  // Insert course
-  const { data: courseData, error: courseError } = await supabase
+  const { data: courseData, error: courseError } = await db()
     .from("courses")
     .insert({
       interest_id: interestId,
@@ -208,14 +210,13 @@ export async function saveCourse(
       description: course.description,
       total_weeks: course.totalWeeks,
       current_week: 1,
-    })
+    } as any)
     .select("id")
     .single();
 
   if (courseError) throw courseError;
-  const courseId = courseData.id;
+  const courseId = (courseData as any).id;
 
-  // Insert weeks and tasks
   for (const week of course.weeks) {
     await saveWeekWithTasks(courseId, week);
   }
@@ -224,7 +225,7 @@ export async function saveCourse(
 }
 
 async function saveWeekWithTasks(courseId: string, week: CourseWeek): Promise<void> {
-  const { data: weekData, error: weekError } = await supabase
+  const { data: weekData, error: weekError } = await db()
     .from("course_weeks")
     .insert({
       course_id: courseId,
@@ -233,7 +234,7 @@ async function saveWeekWithTasks(courseId: string, week: CourseWeek): Promise<vo
       description: week.description,
       unlocked: week.unlocked,
       resources: week.resources ? JSON.parse(JSON.stringify(week.resources)) : null,
-    })
+    } as any)
     .select("id")
     .single();
 
@@ -241,7 +242,7 @@ async function saveWeekWithTasks(courseId: string, week: CourseWeek): Promise<vo
 
   if (week.tasks.length > 0) {
     const taskInserts = week.tasks.map((t, idx) => ({
-      week_id: weekData.id,
+      week_id: (weekData as any).id,
       task_id_client: t.id,
       label: t.label,
       description: t.description || null,
@@ -250,9 +251,9 @@ async function saveWeekWithTasks(courseId: string, week: CourseWeek): Promise<vo
       sort_order: idx,
     }));
 
-    const { error: tasksError } = await supabase
+    const { error: tasksError } = await db()
       .from("course_tasks")
-      .insert(taskInserts);
+      .insert(taskInserts as any);
 
     if (tasksError) throw tasksError;
   }
@@ -271,9 +272,9 @@ export async function updateCourseCurrentWeek(
   interestId: string,
   currentWeek: number
 ): Promise<void> {
-  const { error } = await supabase
+  const { error } = await db()
     .from("courses")
-    .update({ current_week: currentWeek })
+    .update({ current_week: currentWeek } as any)
     .eq("interest_id", interestId);
 
   if (error) throw error;
@@ -283,9 +284,9 @@ export async function unlockWeek(
   courseId: string,
   weekNumber: number
 ): Promise<void> {
-  const { error } = await supabase
+  const { error } = await db()
     .from("course_weeks")
-    .update({ unlocked: true })
+    .update({ unlocked: true } as any)
     .eq("course_id", courseId)
     .eq("week_number", weekNumber);
 
@@ -301,22 +302,20 @@ export async function toggleTaskCompletion(
   taskIdClient: string,
   completed: boolean
 ): Promise<void> {
-  // We need to find the task by week_id + task_id_client since we store the client ID
-  const { error } = await supabase
+  const { error } = await db()
     .from("course_tasks")
-    .update({ completed })
+    .update({ completed } as any)
     .eq("week_id", weekId)
     .eq("task_id_client", taskIdClient);
 
   if (error) throw error;
 }
 
-// Helper to get the DB week ID from course_id + week_number
 export async function getWeekId(
   courseId: string,
   weekNumber: number
 ): Promise<string | null> {
-  const { data, error } = await supabase
+  const { data, error } = await db()
     .from("course_weeks")
     .select("id")
     .eq("course_id", courseId)
@@ -324,12 +323,11 @@ export async function getWeekId(
     .single();
 
   if (error) return null;
-  return data.id;
+  return (data as any).id;
 }
 
-// Helper to get course DB ID from interest_id
 export async function getCourseId(interestId: string): Promise<string | null> {
-  const { data, error } = await supabase
+  const { data, error } = await db()
     .from("courses")
     .select("id")
     .eq("interest_id", interestId)
@@ -337,5 +335,5 @@ export async function getCourseId(interestId: string): Promise<string | null> {
     .single();
 
   if (error) return null;
-  return data.id;
+  return (data as any).id;
 }
