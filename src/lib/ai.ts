@@ -165,7 +165,6 @@ export function getInterestEmoji(interest: string): string {
     raspberry: "🍓",
     ham: "📻",
     radio: "📻",
-    podcast: "🎙️",
     blog: "📝",
     vlog: "📹",
     stream: "📺",
