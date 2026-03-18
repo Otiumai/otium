@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "ElevenLabs API key not configured" }, { status: 501 });
   }
 
-  const voiceId = "21m00Tcm4TlvDq8ikWAM"; // Rachel — warm, natural female voice
+  const voiceId = "9BWtsMINqrJLrRacOk9x"; // Aria — warm, expressive, conversational
 
   try {
     const response = await fetch(
@@ -33,10 +33,12 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           text: text.slice(0, 5000), // Limit to 5000 chars to stay within limits
-          model_id: "eleven_monolingual_v1",
+          model_id: "eleven_multilingual_v2",
           voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
+            stability: 0.4,
+            similarity_boost: 0.8,
+            style: 0.3,
+            use_speaker_boost: true,
           },
         }),
       }

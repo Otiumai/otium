@@ -41,11 +41,11 @@ export function Navbar() {
           <a href="#pricing" className="text-body-sm text-surface-500 hover:text-surface-800 transition-colors">
             Pricing
           </a>
-          <Link href="/login" className="text-body-sm text-surface-500 hover:text-surface-800 transition-colors">
+          <Link href="/app" className="text-body-sm text-surface-500 hover:text-surface-800 transition-colors">
             Sign In
           </Link>
           <Link
-            href="/signup"
+            href="/app"
             className="bg-surface-900 text-white text-body-sm font-medium px-5 py-2 rounded-full hover:bg-surface-800 transition-colors"
           >
             Get Started
@@ -69,8 +69,8 @@ export function Navbar() {
             <a href="#features" className="text-body text-surface-600 hover:text-surface-900" onClick={() => setMobileOpen(false)}>Features</a>
             <a href="#how-it-works" className="text-body text-surface-600 hover:text-surface-900" onClick={() => setMobileOpen(false)}>How It Works</a>
             <a href="#pricing" className="text-body text-surface-600 hover:text-surface-900" onClick={() => setMobileOpen(false)}>Pricing</a>
-            <Link href="/login" className="text-body text-surface-600 hover:text-surface-900">Sign In</Link>
-            <Link href="/signup" className="btn-primary text-center">Get Started</Link>
+            <Link href="/app" className="text-body text-surface-600 hover:text-surface-900">Sign In</Link>
+            <Link href="/app" className="btn-primary text-center">Get Started</Link>
           </div>
         </div>
       )}
