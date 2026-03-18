@@ -69,10 +69,13 @@ export default function AppPage() {
 
   // Load interests from database on mount
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setInitialLoading(false);
+      return;
+    }
     const loadData = async () => {
       try {
-        const data = await fetchInterests(user.id);
+        const data = await fetchInterests(user?.id);
         setInterests(data);
       } catch (err) {
         console.error("Failed to load interests:", err);
@@ -123,7 +126,7 @@ export default function AppPage() {
   };
 
   const sendMessage = async (content: string, switchToChat?: boolean) => {
-    if (!content.trim() || isLoading || !user) return;
+    if (!content.trim() || isLoading) return;
     if (switchToChat) setActiveTab("chat");
 
     const userMessage: ChatMessage = {
@@ -152,9 +155,9 @@ export default function AppPage() {
       setInterests((prev) => [...prev, currentInterest]);
       setActiveInterestId(tempId);
 
-      // Save to DB and get real ID
-      try {
-        const dbId = await createInterest(user.id, currentInterest.name, currentInterest.emoji);
+      // Save to DB and get real ID (only if logged in)
+      if (user) { try {
+        const dbId = await createInterest(user?.id, currentInterest.name, currentInterest.emoji);
         currentInterest = { ...currentInterest, id: dbId };
         setInterests((prev) => prev.map((i) => (i.id === tempId ? { ...i, id: dbId } : i)));
         setActiveInterestId(dbId);
