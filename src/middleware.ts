@@ -39,12 +39,11 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Protected routes: redirect to login if not authenticated
-  // TEMPORARILY DISABLED for launch testing
-  // if (pathname.startsWith("/app") && !user) {
-  //   const url = request.nextUrl.clone();
-  //   url.pathname = "/login";
-  //   return NextResponse.redirect(url);
-  // }
+  if (pathname.startsWith("/app") && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
 
   // Auth pages: redirect to app if already logged in
   if ((pathname === "/login" || pathname === "/signup") && user) {

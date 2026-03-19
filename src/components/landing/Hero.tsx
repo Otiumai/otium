@@ -31,7 +31,7 @@ export function Hero() {
           className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up"
           style={{ animationDelay: "0.3s" }}
         >
-          <Link href="/app" className="btn-primary text-lg px-9 py-4">
+          <Link href="/signup" className="btn-primary text-lg px-9 py-4">
             Get Started — It&apos;s Free
           </Link>
           <a href="#how-it-works" className="link-arrow text-lg">
