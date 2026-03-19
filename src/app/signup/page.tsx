@@ -32,9 +32,10 @@ export default function SignUpPage() {
       if (signUpError) {
         setError(signUpError.message);
       } else {
-        // Supabase may require email confirmation depending on settings.
-        // If email confirmation is disabled, the user is signed in immediately.
-        setShowConfirmation(true);
+        // If email confirmation is disabled, user is signed in immediately
+        // Try to redirect to app - if they need confirmation, they'll be redirected back
+        router.push("/app");
+        return;
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");

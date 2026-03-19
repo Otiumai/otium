@@ -53,8 +53,15 @@ export default function AppPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { user, signOut } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [authLoading, user, router]);
 
   // Voice controls
   const stt = useSpeechToText();
@@ -475,7 +482,7 @@ export default function AppPage() {
   const lastAssistantMsgId = lastAssistantMsgIndex >= 0 ? activeInterest!.messages[activeInterest!.messages.length - 1 - lastAssistantMsgIndex]?.id : null;
 
   // Loading screen
-  if (initialLoading) {
+  if (initialLoading || authLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-white">
         <div className="text-center">
