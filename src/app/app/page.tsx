@@ -56,12 +56,8 @@ export default function AppPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/login");
-    }
-  }, [authLoading, user, router]);
+  // If not logged in after auth loads, show login prompt instead of redirecting
+  // (avoids redirect loops with middleware)
 
   // Voice controls
   const stt = useSpeechToText();
@@ -491,6 +487,26 @@ export default function AppPage() {
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-accent-500 mx-auto mb-4" />
           <p className="text-body-sm text-surface-400">Loading your interests...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not logged in — show login prompt
+  if (!user) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-white">
+        <div className="text-center max-w-sm">
+          <h2 className="text-title font-display text-surface-900 mb-3">Sign in to continue</h2>
+          <p className="text-body-sm text-surface-400 mb-6">Create an account or sign in to save your interests and progress.</p>
+          <div className="flex gap-3 justify-center">
+            <Link href="/login" className="px-6 py-2.5 bg-surface-900 text-white rounded-apple font-medium hover:bg-surface-800 transition-colors">
+              Sign In
+            </Link>
+            <Link href="/signup" className="px-6 py-2.5 border border-surface-300 text-surface-700 rounded-apple font-medium hover:bg-surface-50 transition-colors">
+              Sign Up
+            </Link>
+          </div>
         </div>
       </div>
     );
