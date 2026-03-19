@@ -23,11 +23,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
+      // First try getSession for the token
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      setLoading(false);
+      
+      if (session?.user) {
+        setUser(session.user);
+        setLoading(false);
+      } else {
+        // Fallback: check with getUser() which validates the cookie-based session
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
+        setUser(authUser ?? null);
+        setLoading(false);
+      }
     };
 
     getSession();
