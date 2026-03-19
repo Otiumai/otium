@@ -200,6 +200,13 @@ export default function AdPage() {
       <div className={`h-full w-full flex items-center justify-center transition-opacity duration-700 ease-in-out ${fade === "in" ? "opacity-100" : "opacity-0"}`}>
         {scene >= 0 && scene < 15 && scenes[scene]}
       </div>
+      {/* Persistent logo watermark — top left */}
+      {scene >= 0 && scene < 14 && (
+        <div className="fixed top-8 left-8 flex items-center gap-3 opacity-30 transition-opacity duration-700">
+          <Image src="/images/otium-mark-sm.png" alt="" width={28} height={20} />
+          <span className="text-white text-sm font-medium tracking-wider">OTIUM</span>
+        </div>
+      )}
       <div className="fixed bottom-0 left-0 right-0 h-[2px] bg-white/5">
         <div className="h-full bg-gradient-to-r from-blue-500 via-violet-500 to-emerald-500 transition-all duration-500 ease-out" style={{width:`${((scene+1)/15)*100}%`}} />
       </div>
