@@ -38,11 +38,24 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Auth pages: redirect to app if already logged in
+  // Auth pages: redirect to app ONLY if we have a confirmed valid user
   if ((pathname === "/login" || pathname === "/signup") && user) {
     const url = request.nextUrl.clone();
     url.pathname = "/app";
     return NextResponse.redirect(url);
+  }
+
+  // If user is on /app but has no valid session, clear stale cookies and let them through
+  // The app page will handle the redirect to /login client-side
+  if (pathname.startsWith("/app") && !user) {
+    // Clear any stale supabase cookies
+    const response = NextResponse.next({ request });
+    request.cookies.getAll().forEach(cookie => {
+      if (cookie.name.startsWith('sb-')) {
+        response.cookies.delete(cookie.name);
+      }
+    });
+    return response;
   }
 
   return supabaseResponse;
