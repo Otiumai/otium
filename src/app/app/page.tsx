@@ -169,9 +169,12 @@ export default function AppPage() {
           currentInterest = { ...currentInterest, id: dbId };
           setInterests((prev) => prev.map((i) => (i.id === tempId ? { ...i, id: dbId } : i)));
           setActiveInterestId(dbId);
+        } else {
+          console.warn("No user session — data will not persist");
         }
       } catch (err) {
         console.error("Failed to create interest:", err);
+        alert("Failed to save: " + (err instanceof Error ? err.message : String(err)));
       }
     } else {
       currentInterest = {
@@ -546,6 +549,16 @@ export default function AppPage() {
           })}
         </div>
         <div className="p-3 border-t border-surface-200/60">
+          {user && (
+            <p className="text-caption text-surface-300 px-3 mb-2 truncate">
+              {user.email}
+            </p>
+          )}
+          {!user && (
+            <p className="text-caption text-red-400 px-3 mb-2">
+              ⚠ Not logged in — data won&apos;t save
+            </p>
+          )}
           <button onClick={handleSignOut} className="flex items-center gap-2 px-3 py-2 text-body-sm text-surface-400 hover:text-surface-600 transition-colors w-full">
             <LogOut className="w-4 h-4" />
             Sign Out
