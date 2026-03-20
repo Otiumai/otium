@@ -8,6 +8,7 @@ function AdContent() {
   const searchParams = useSearchParams();
   const dark = searchParams.get("theme") === "dark";
   const autoplay = searchParams.get("autoplay") === "1";
+  const vertical = searchParams.get("layout") === "vertical";
 
   // Colors based on theme
   const bgColor = dark ? "#000000" : "#ffffff";
@@ -85,7 +86,7 @@ function AdContent() {
     0: (
       <div className="flex flex-col items-center gap-6">
         <div className="animate-[scaleIn_1.2s_ease-out]">
-          <Image src="/images/otium-mark.png" alt="Otium" width={200} height={145} className="drop-shadow-2xl" />
+          <Image src="/images/otium-mark.png" alt="Otium" width={vertical ? 320 : 200} height={vertical ? 232 : 145} className="drop-shadow-2xl" />
         </div>
         <p style={{ color: fgA(0.3) }} className="text-sm tracking-[0.5em] uppercase font-light mt-4">Otium</p>
       </div>
