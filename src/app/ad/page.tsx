@@ -20,10 +20,8 @@ function AdContent() {
   const [scene, setScene] = useState(-1);
   const [fade, setFade] = useState<"in"|"out">("out");
   const [started, setStarted] = useState(autoplay);
-  const [showLiquidMorph, setShowLiquidMorph] = useState(false);
-
-  // Updated durations for new scene flow:
-  // 0: Logo (3s), 1: Liquid morph + text (3.5s), 2: "wanted to learn" (3.5s),
+  // Updated durations for scene flow:
+  // 0: Logo (3s), 1: Text (3.5s), 2: "wanted to learn" (3.5s),
   // 3: "never knew where" (3s), 4: Introducing + Logo (3.5s), 5: Discover deeper (4s),
   // 6: Features list (7s), 7: "Whatever curious" (4.5s), 8: Powered by (3.5s),
   // 9: Coming Soon (5s), 10: null (end)
@@ -39,22 +37,6 @@ function AdContent() {
     if (scene < 0 || scene >= durations.length) return;
     const dur = durations[scene];
 
-    // Trigger liquid morph effect at scene 0 midway through
-    if (scene === 0) {
-      const morphStart = dur - 1500; // Start morph 1.5s before scene ends
-      const t0 = setTimeout(() => setShowLiquidMorph(true), morphStart);
-      const t1 = setTimeout(() => setFade("out"), dur - 800);
-      const t2 = setTimeout(() => {
-        if (scene < durations.length - 1) {
-          setScene(s => s + 1);
-          setFade("in");
-          setShowLiquidMorph(false);
-        }
-      }, dur);
-      return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); };
-    }
-
-    // Normal fade-out/next for other scenes
     const t1 = setTimeout(() => setFade("out"), dur - 800);
     const t2 = setTimeout(() => {
       if (scene < durations.length - 1) {
@@ -101,49 +83,18 @@ function AdContent() {
 
   const scenes: Record<number, React.ReactNode> = {
     0: (
-      <div className="flex flex-col items-center gap-6 relative">
-        {/* Static logo with scaleIn animation */}
-        <div className={`${!showLiquidMorph ? "animate-[scaleIn_1.2s_ease-out]" : ""}`}>
+      <div className="flex flex-col items-center gap-6">
+        <div className="animate-[scaleIn_1.2s_ease-out]">
           <Image src="/images/otium-mark.png" alt="Otium" width={200} height={145} className="drop-shadow-2xl" />
         </div>
-
-        {/* Liquid morph overlay — animates only when showLiquidMorph is true */}
-        {showLiquidMorph && (
-          <>
-            {/* Falling & splashing logo */}
-            <div className="absolute animate-[logoMorph_1.5s_ease-in_forwards]">
-              <Image
-                src="/images/otium-mark.png"
-                alt="Otium"
-                width={200}
-                height={145}
-                className="drop-shadow-2xl"
-                style={{
-                  filter: "blur(0px)",
-                }}
-              />
-            </div>
-
-            {/* Ripple effect — expands outward from impact */}
-            <div className="absolute w-96 h-96 rounded-full animate-[ripple_1.5s_ease-out_forwards]" style={{
-              border: `2px solid ${fgA(0.2)}`,
-              boxShadow: `inset 0 0 30px ${fgA(0.1)}`,
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-            }} />
-          </>
-        )}
-
         <p style={{ color: fgA(0.3) }} className="text-sm tracking-[0.5em] uppercase font-light mt-4">Otium</p>
       </div>
     ),
 
     1: (
-      <div className="max-w-4xl text-center px-8 relative">
-        {/* Initial blurred text that clears (liquid resolving effect) */}
+      <div className="max-w-4xl text-center px-8">
         <h1
-          className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-[1.05] animate-[textLiquidResolve_1.5s_ease-out_forwards]"
+          className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-[1.05]"
           style={{ color: fgColor }}
         >
           What if learning<br/>
@@ -269,49 +220,6 @@ function AdContent() {
         @keyframes scaleIn {
           0% { transform: scale(0.8); opacity: 0; }
           100% { transform: scale(1); opacity: 1; }
-        }
-
-        @keyframes logoMorph {
-          0% {
-            transform: translateY(-80px) scale(1);
-            filter: blur(0px);
-            opacity: 1;
-          }
-          60% {
-            transform: translateY(40px) scale(1.1);
-            filter: blur(8px);
-          }
-          100% {
-            transform: translateY(100px) scaleX(2) scaleY(0.3);
-            filter: blur(25px);
-            opacity: 0;
-          }
-        }
-
-        @keyframes ripple {
-          0% {
-            transform: translate(-50%, -50%) scale(0);
-            opacity: 0.6;
-          }
-          100% {
-            transform: translate(-50%, -50%) scale(1.8);
-            opacity: 0;
-          }
-        }
-
-        @keyframes textLiquidResolve {
-          0% {
-            filter: blur(20px);
-            opacity: 0.3;
-          }
-          50% {
-            filter: blur(10px);
-            opacity: 0.7;
-          }
-          100% {
-            filter: blur(0px);
-            opacity: 1;
-          }
         }
 
         @keyframes featureFadeSlide {
