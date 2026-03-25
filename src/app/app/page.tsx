@@ -248,6 +248,16 @@ export default function AppPage() {
               const parsed = JSON.parse(data);
               if (parsed.structured) {
                 structuredData = parsed.structured;
+              } else if (parsed.replaceContent !== undefined) {
+                // Replace the full content (strips JSON block from display)
+                fullContent = parsed.replaceContent;
+                setInterests((prev) =>
+                  prev.map((i) =>
+                    i.id === currentInterest.id
+                      ? { ...i, messages: i.messages.map((m) => m.id === assistantMessage.id ? { ...m, content: fullContent } : m) }
+                      : i
+                  )
+                );
               } else {
                 const text = parsed.content || "";
                 fullContent += text;
@@ -264,7 +274,22 @@ export default function AppPage() {
         }
       }
 
-      // Apply structured data
+      // Apply structured data — with fallbacks for missing fields
+      // Fallback: if courseDays exist but onboardingComplete is missing, treat as complete
+      if (structuredData.courseDays && structuredData.courseDays.length >= 7 && !structuredData.onboardingComplete) {
+        structuredData.onboardingComplete = true;
+      }
+      // Fallback: if courseDays exist but coursePlan is missing, auto-generate from interest name
+      if (structuredData.courseDays && structuredData.courseDays.length > 0 && !structuredData.coursePlan) {
+        const interestName = currentInterest.name;
+        const capitalizedName = interestName.charAt(0).toUpperCase() + interestName.slice(1);
+        structuredData.coursePlan = {
+          title: `${capitalizedName} Journey`,
+          description: `Your personalized 30-day ${interestName} learning path`,
+          totalDays: 30,
+        };
+      }
+
       setInterests((prev) =>
         prev.map((i) => {
           if (i.id !== currentInterest.id) return i;

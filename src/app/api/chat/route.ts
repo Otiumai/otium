@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 4096,
+        max_tokens: 16384,
         system: SYSTEM_PROMPT,
         messages: claudeMessages,
         stream: true,
@@ -120,13 +120,52 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // Step 2: Extract structured data using OpenAI (cheap/fast for parsing)
-          // Falls back gracefully if no OpenAI key
-          if (openaiKey) {
+          // Step 2: Extract structured data
+          // First, try to parse the direct JSON block from Claude's response
+          let directJsonParsed = false;
+          const jsonStartMarker = "|||COURSE_JSON|||";
+          const jsonEndMarker = "|||END_COURSE_JSON|||";
+          const jsonStartIdx = fullResponse.indexOf(jsonStartMarker);
+          const jsonEndIdx = fullResponse.indexOf(jsonEndMarker);
+
+          if (jsonStartIdx !== -1 && jsonEndIdx !== -1 && jsonEndIdx > jsonStartIdx) {
+            const jsonStr = fullResponse.slice(jsonStartIdx + jsonStartMarker.length, jsonEndIdx).trim();
+            try {
+              const courseData = JSON.parse(jsonStr);
+              // Build structured data from the direct JSON, merging with default fields
+              const structured: Record<string, unknown> = {
+                quickReplies: [],
+                creators: [],
+                coursePlan: courseData.coursePlan || null,
+                courseDays: courseData.courseDays || [],
+                onboardingComplete: courseData.onboardingComplete ?? (courseData.courseDays?.length > 0),
+              };
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ structured })}\n\n`
+                )
+              );
+              directJsonParsed = true;
+
+              // Strip the JSON block from the displayed content by sending a replace event
+              const cleanContent = fullResponse.slice(0, jsonStartIdx).trimEnd();
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ replaceContent: cleanContent })}\n\n`
+                )
+              );
+            } catch (parseErr) {
+              console.error("Direct course JSON parse failed:", parseErr, "Raw:", jsonStr?.slice(0, 200));
+            }
+          }
+
+          // Fallback: Extract structured data using OpenAI (cheap/fast for parsing)
+          // Only if direct JSON was not found/parsed
+          if (!directJsonParsed && openaiKey) {
             try {
               // Truncate very long responses to avoid token limits
-              const truncatedResponse = fullResponse.length > 12000 
-                ? fullResponse.slice(0, 12000) + "\n\n[TRUNCATED - extract from what's shown above]"
+              const truncatedResponse = fullResponse.length > 24000 
+                ? fullResponse.slice(0, 24000) + "\n\n[TRUNCATED - extract from what's shown above]"
                 : fullResponse;
               
               const extractResponse = await fetch("https://api.openai.com/v1/chat/completions", {
