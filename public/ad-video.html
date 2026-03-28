@@ -122,22 +122,18 @@ html, body {
 }
 
 #scene3 .intro-label {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -40%);
-  font-size: clamp(36px, 6vw, 80px);
-  font-weight: 700;
+  font-size: clamp(20px, 2.5vw, 40px);
+  font-weight: 600;
   color: #1d1d1f;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   opacity: 0;
-  z-index: 2;
+  transform: translateY(10px);
   transition: opacity 0.8s ease, transform 0.8s ease;
 }
 
 #scene3 .intro-label.visible {
   opacity: 1;
-  transform: translate(-50%, -50%);
+  transform: translateY(0);
 }
 
 /* Scene 4: App mockup */
@@ -388,8 +384,8 @@ html, body {
 }
 
 #scene6 .cta-logo {
-  width: 140px;
-  height: 140px;
+  width: 80px;
+  height: 80px;
   object-fit: contain;
   opacity: 0;
   transform: scale(0.85);
@@ -478,12 +474,12 @@ html, body {
     <p class="hero-text">But you never knew<br>where to start</p>
   </div>
 
-  <!-- Scene 3: Introducing — Giant logo with text inside -->
+  <!-- Scene 3: Introducing -->
   <div class="scene" id="scene3">
     <div class="logo-container">
-      <div class="logo-glow" style="width:700px;height:700px"></div>
-      <img class="logo-img" src="/images/otium-mark.png" alt="Otium" style="width:min(85vw,700px);height:min(85vw,700px)">
-      <span class="intro-label">Otium</span>
+      <div class="logo-glow"></div>
+      <img class="logo-img" src="/images/otium-mark.png" alt="Otium">
+      <span class="intro-label">Introducing Otium</span>
     </div>
   </div>
 
