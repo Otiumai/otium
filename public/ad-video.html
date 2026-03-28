@@ -122,17 +122,22 @@ html, body {
 }
 
 #scene3 .intro-label {
-  font-size: clamp(20px, 2.5vw, 40px);
-  font-weight: 600;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -40%);
+  font-size: clamp(36px, 6vw, 80px);
+  font-weight: 700;
   color: #1d1d1f;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   opacity: 0;
+  z-index: 2;
   transition: opacity 0.8s ease, transform 0.8s ease;
 }
 
 #scene3 .intro-label.visible {
   opacity: 1;
-  transform: translate(-50%, -50%) translateY(0) !important;
+  transform: translate(-50%, -50%);
 }
 
 /* Scene 4: App mockup */
@@ -475,10 +480,10 @@ html, body {
 
   <!-- Scene 3: Introducing — Giant logo with text inside -->
   <div class="scene" id="scene3">
-    <div class="logo-container" style="position:relative">
+    <div class="logo-container">
       <div class="logo-glow" style="width:700px;height:700px"></div>
       <img class="logo-img" src="/images/otium-mark.png" alt="Otium" style="width:min(85vw,700px);height:min(85vw,700px)">
-      <span class="intro-label" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) translateY(10px);opacity:0;z-index:2;font-size:clamp(36px,6vw,80px);font-weight:700;letter-spacing:-0.03em">Otium</span>
+      <span class="intro-label">Otium</span>
     </div>
   </div>
 
