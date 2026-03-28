@@ -6,6 +6,10 @@ export const metadata: Metadata = {
   title: "Otium — Discover What You Love",
   description:
     "AI-powered platform that helps you discover, explore, and master your hobbies and interests.",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
