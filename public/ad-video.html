@@ -383,8 +383,8 @@ html, body {
 }
 
 #scene6 .cta-logo {
-  width: 80px;
-  height: 80px;
+  width: 140px;
+  height: 140px;
   object-fit: contain;
   opacity: 0;
   transform: scale(0.85);
@@ -476,9 +476,9 @@ html, body {
   <!-- Scene 3: Introducing — Giant logo with text inside -->
   <div class="scene" id="scene3">
     <div class="logo-container" style="position:relative">
-      <div class="logo-glow" style="width:500px;height:500px"></div>
-      <img class="logo-img" src="/images/otium-mark.png" alt="Otium" style="width:min(70vw,500px);height:min(70vw,500px)">
-      <span class="intro-label" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) translateY(10px);opacity:0;z-index:2;font-size:clamp(28px,4vw,64px);font-weight:700;letter-spacing:-0.03em">Otium</span>
+      <div class="logo-glow" style="width:700px;height:700px"></div>
+      <img class="logo-img" src="/images/otium-mark.png" alt="Otium" style="width:min(85vw,700px);height:min(85vw,700px)">
+      <span class="intro-label" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) translateY(10px);opacity:0;z-index:2;font-size:clamp(36px,6vw,80px);font-weight:700;letter-spacing:-0.03em">Otium</span>
     </div>
   </div>
 
@@ -613,7 +613,7 @@ async function playScene4() {
   await delay(100);
   aiMsg.classList.add('visible');
   await delay(300);
-  await typeText(aiMsg, "Great choice! Guitar is one of the most rewarding instruments to learn. Let me build your personal journey", 22);
+  await typeText(aiMsg, "Great choice — guitar is one of the most rewarding instruments to learn, let me build your personal journey", 22);
   await delay(500);
 
   // Journey card
