@@ -29,8 +29,6 @@ html, body {
   height: 100vh;
   overflow: hidden;
   background: #ffffff;
-  /* Optimized for 9:16 vertical / 1080x1920 */
-  aspect-ratio: 9 / 16;
 }
 
 /* Subtle animated gradient background */
@@ -38,7 +36,7 @@ html, body {
   position: absolute;
   inset: 0;
   opacity: 0;
-  background: radial-gradient(ellipse 90% 50% at 50% 35%, rgba(59,130,246,0.04) 0%, transparent 70%);
+  background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(59,130,246,0.04) 0%, transparent 70%);
   transition: opacity 2s ease;
   z-index: 0;
 }
@@ -65,26 +63,26 @@ html, body {
   pointer-events: none;
 }
 
-/* Typography — adjusted for vertical viewport */
+/* Typography */
 .hero-text {
-  font-size: clamp(28px, 7vw, 52px);
+  font-size: clamp(28px, 3.5vw, 56px);
   font-weight: 300;
   color: #1d1d1f;
   text-align: center;
-  line-height: 1.35;
+  line-height: 1.3;
   letter-spacing: -0.02em;
-  max-width: 90%;
-  padding: 0 24px;
+  max-width: 800px;
+  padding: 0 40px;
 }
 
 .hero-text-sm {
-  font-size: clamp(18px, 4.5vw, 28px);
+  font-size: clamp(18px, 2vw, 32px);
   font-weight: 400;
   color: #6e6e73;
   text-align: center;
   line-height: 1.5;
-  max-width: 85%;
-  padding: 0 24px;
+  max-width: 700px;
+  padding: 0 40px;
 }
 
 /* Scene 3: Logo reveal */
@@ -93,7 +91,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
+  gap: 24px;
 }
 
 #scene3 .logo-glow {
@@ -111,8 +109,8 @@ html, body {
 }
 
 #scene3 .logo-img {
-  width: 110px;
-  height: 110px;
+  width: 100px;
+  height: 100px;
   object-fit: contain;
   position: relative;
   z-index: 1;
@@ -127,7 +125,7 @@ html, body {
 }
 
 #scene3 .intro-label {
-  font-size: clamp(24px, 6vw, 40px);
+  font-size: clamp(20px, 2.5vw, 40px);
   font-weight: 600;
   color: #1d1d1f;
   letter-spacing: -0.02em;
@@ -141,16 +139,16 @@ html, body {
   transform: translateY(0);
 }
 
-/* Scene 4: App mockup — sized for vertical layout */
+/* Scene 4: App mockup */
 #scene4 {
   padding: 0;
 }
 
 .app-mockup {
-  width: min(88vw, 380px);
-  height: min(70vh, 720px);
+  width: min(90vw, 440px);
+  height: min(80vh, 680px);
   background: #f5f5f7;
-  border-radius: 36px;
+  border-radius: 32px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
   overflow: hidden;
   display: flex;
@@ -206,7 +204,7 @@ html, body {
 }
 
 .msg {
-  max-width: 85%;
+  max-width: 82%;
   padding: 12px 16px;
   border-radius: 20px;
   font-size: 15px;
@@ -346,19 +344,18 @@ html, body {
   font-weight: 600;
 }
 
-/* Scene 5: Promise — vertical layout */
+/* Scene 5: Promise */
 #scene5 .emoji-field {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 16px;
-  margin-top: 36px;
-  max-width: 85%;
-  padding: 0 16px;
+  gap: 20px;
+  margin-top: 32px;
+  max-width: 600px;
 }
 
 .emoji-item {
-  font-size: clamp(32px, 8vw, 48px);
+  font-size: clamp(28px, 3vw, 44px);
   opacity: 0;
   transform: translateY(20px) scale(0.7);
   transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
@@ -370,14 +367,13 @@ html, body {
 }
 
 .hobby-list {
-  font-size: clamp(13px, 3.5vw, 18px);
+  font-size: clamp(14px, 1.4vw, 20px);
   color: #86868b;
   text-align: center;
-  margin-top: 28px;
+  margin-top: 24px;
   opacity: 0;
   transition: opacity 0.8s ease;
   letter-spacing: 0.02em;
-  padding: 0 24px;
 }
 
 .hobby-list.visible { opacity: 1; }
@@ -387,12 +383,12 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
 }
 
 #scene6 .cta-logo {
-  width: 90px;
-  height: 90px;
+  width: 80px;
+  height: 80px;
   object-fit: contain;
   opacity: 0;
   transform: scale(0.85);
@@ -405,12 +401,10 @@ html, body {
 }
 
 #scene6 .cta-tagline {
-  font-size: clamp(26px, 7vw, 44px);
+  font-size: clamp(24px, 3vw, 48px);
   font-weight: 600;
   color: #1d1d1f;
   letter-spacing: -0.03em;
-  text-align: center;
-  padding: 0 24px;
   opacity: 0;
   transform: translateY(8px);
   transition: opacity 0.8s ease 0.3s, transform 0.8s ease 0.3s;
@@ -422,7 +416,7 @@ html, body {
 }
 
 #scene6 .cta-url {
-  font-size: clamp(16px, 4vw, 22px);
+  font-size: clamp(14px, 1.4vw, 20px);
   color: #3b82f6;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -761,107 +755,10 @@ async function play() {
   await delay(4000);
 }
 
-// Auto-start with recording
+// Auto-start
 window.addEventListener('load', () => {
-  const canvas = document.getElementById('canvas');
-  
-  // Create a canvas element to capture frames
-  const recordCanvas = document.createElement('canvas');
-  recordCanvas.width = 1080;
-  recordCanvas.height = 1920;
-  const ctx = recordCanvas.getContext('2d');
-  
-  // Use html2canvas-style capture via MediaRecorder on a stream
-  const stream = recordCanvas.captureStream(30);
-  const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
-  const chunks = [];
-  
-  recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-  recorder.onstop = () => {
-    const blob = new Blob(chunks, { type: 'video/webm' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'otium-ad-mobile-9x16.webm';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  };
-
-  // Capture frames using html-to-canvas approach
-  let recording = true;
-  
-  function captureFrame() {
-    if (!recording) return;
-    const rect = canvas.getBoundingClientRect();
-    // Use drawImage with a foreignObject SVG to capture HTML
-    const data = `<svg xmlns="http://www.w3.org/2000/svg" width="${rect.width}" height="${rect.height}">
-      <foreignObject width="100%" height="100%">
-        ${new XMLSerializer().serializeToString(canvas)}
-      </foreignObject>
-    </svg>`;
-    // This approach won't work well for complex HTML, so let's use a simpler method
-    requestAnimationFrame(captureFrame);
-  }
-
-  // Simpler approach: just record the element directly
-  // Use the element's own capture if available
-  setTimeout(async () => {
-    // Start playback
-    play().then(() => {
-      // After ad finishes, show download button
-      setTimeout(() => {
-        const btn = document.createElement('button');
-        btn.textContent = '⬇ Download Video';
-        btn.style.cssText = 'position:fixed;bottom:40px;left:50%;transform:translateX(-50%);padding:16px 32px;background:#3b82f6;color:white;border:none;border-radius:12px;font-size:18px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;z-index:9999;box-shadow:0 4px 20px rgba(59,130,246,0.4)';
-        btn.onclick = async () => {
-          btn.textContent = 'Starting recording...';
-          // Replay and record
-          try {
-            const captureStream = canvas.captureStream ? canvas.captureStream(30) : null;
-            if (!captureStream) {
-              btn.textContent = 'Use screen recording instead (browser doesn\'t support capture)';
-              return;
-            }
-            const rec = new MediaRecorder(captureStream, { 
-              mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm'
-            });
-            const parts = [];
-            rec.ondataavailable = (e) => { if (e.data.size > 0) parts.push(e.data); };
-            rec.onstop = () => {
-              const blob = new Blob(parts, { type: 'video/webm' });
-              const url = URL.createObjectURL(blob);
-              const dl = document.createElement('a');
-              dl.href = url;
-              dl.download = 'otium-ad-mobile-9x16.webm';
-              document.body.appendChild(dl);
-              dl.click();
-              dl.remove();
-              URL.revokeObjectURL(url);
-              btn.textContent = '⬇ Download Video';
-            };
-            
-            btn.textContent = 'Recording... wait 30s';
-            rec.start();
-            
-            // Reset and replay all scenes
-            document.querySelectorAll('.scene').forEach(s => { s.style.opacity = '0'; });
-            document.querySelectorAll('.visible').forEach(el => el.classList.remove('visible'));
-            document.getElementById('chatArea').innerHTML = '';
-            document.getElementById('emojiField').innerHTML = '';
-            
-            await play();
-            await new Promise(r => setTimeout(r, 500));
-            rec.stop();
-          } catch(err) {
-            btn.textContent = 'Error: ' + err.message;
-          }
-        };
-        document.body.appendChild(btn);
-      }, 500);
-    });
-  }, 300);
+  // Small initial pause for font loading
+  setTimeout(play, 300);
 });
 </script>
 </body>
