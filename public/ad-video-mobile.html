@@ -761,10 +761,107 @@ async function play() {
   await delay(4000);
 }
 
-// Auto-start
+// Auto-start with recording
 window.addEventListener('load', () => {
-  // Small initial pause for font loading
-  setTimeout(play, 300);
+  const canvas = document.getElementById('canvas');
+  
+  // Create a canvas element to capture frames
+  const recordCanvas = document.createElement('canvas');
+  recordCanvas.width = 1080;
+  recordCanvas.height = 1920;
+  const ctx = recordCanvas.getContext('2d');
+  
+  // Use html2canvas-style capture via MediaRecorder on a stream
+  const stream = recordCanvas.captureStream(30);
+  const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+  const chunks = [];
+  
+  recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+  recorder.onstop = () => {
+    const blob = new Blob(chunks, { type: 'video/webm' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'otium-ad-mobile-9x16.webm';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  // Capture frames using html-to-canvas approach
+  let recording = true;
+  
+  function captureFrame() {
+    if (!recording) return;
+    const rect = canvas.getBoundingClientRect();
+    // Use drawImage with a foreignObject SVG to capture HTML
+    const data = `<svg xmlns="http://www.w3.org/2000/svg" width="${rect.width}" height="${rect.height}">
+      <foreignObject width="100%" height="100%">
+        ${new XMLSerializer().serializeToString(canvas)}
+      </foreignObject>
+    </svg>`;
+    // This approach won't work well for complex HTML, so let's use a simpler method
+    requestAnimationFrame(captureFrame);
+  }
+
+  // Simpler approach: just record the element directly
+  // Use the element's own capture if available
+  setTimeout(async () => {
+    // Start playback
+    play().then(() => {
+      // After ad finishes, show download button
+      setTimeout(() => {
+        const btn = document.createElement('button');
+        btn.textContent = '⬇ Download Video';
+        btn.style.cssText = 'position:fixed;bottom:40px;left:50%;transform:translateX(-50%);padding:16px 32px;background:#3b82f6;color:white;border:none;border-radius:12px;font-size:18px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;z-index:9999;box-shadow:0 4px 20px rgba(59,130,246,0.4)';
+        btn.onclick = async () => {
+          btn.textContent = 'Starting recording...';
+          // Replay and record
+          try {
+            const captureStream = canvas.captureStream ? canvas.captureStream(30) : null;
+            if (!captureStream) {
+              btn.textContent = 'Use screen recording instead (browser doesn\'t support capture)';
+              return;
+            }
+            const rec = new MediaRecorder(captureStream, { 
+              mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm'
+            });
+            const parts = [];
+            rec.ondataavailable = (e) => { if (e.data.size > 0) parts.push(e.data); };
+            rec.onstop = () => {
+              const blob = new Blob(parts, { type: 'video/webm' });
+              const url = URL.createObjectURL(blob);
+              const dl = document.createElement('a');
+              dl.href = url;
+              dl.download = 'otium-ad-mobile-9x16.webm';
+              document.body.appendChild(dl);
+              dl.click();
+              dl.remove();
+              URL.revokeObjectURL(url);
+              btn.textContent = '⬇ Download Video';
+            };
+            
+            btn.textContent = 'Recording... wait 30s';
+            rec.start();
+            
+            // Reset and replay all scenes
+            document.querySelectorAll('.scene').forEach(s => { s.style.opacity = '0'; });
+            document.querySelectorAll('.visible').forEach(el => el.classList.remove('visible'));
+            document.getElementById('chatArea').innerHTML = '';
+            document.getElementById('emojiField').innerHTML = '';
+            
+            await play();
+            await new Promise(r => setTimeout(r, 500));
+            rec.stop();
+          } catch(err) {
+            btn.textContent = 'Error: ' + err.message;
+          }
+        };
+        document.body.appendChild(btn);
+      }, 500);
+    });
+  }, 300);
 });
 </script>
 </body>
