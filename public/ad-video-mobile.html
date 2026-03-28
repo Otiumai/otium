@@ -11,19 +11,22 @@
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
-  width: 1080px;
-  height: 1920px;
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
-  background: #ffffff;
+  background: #000;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #canvas {
   position: relative;
-  width: 1080px;
-  height: 1920px;
+  width: calc(100vh * 9 / 16);
+  height: 100vh;
   overflow: hidden;
   background: #ffffff;
   /* Optimized for 9:16 vertical / 1080x1920 */
