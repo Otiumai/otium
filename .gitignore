@@ -1,3 +1,6 @@
+# dev assets (ads, mockups, build scripts)
+_dev-assets/
+
 # dependencies
 node_modules/
 .pnp

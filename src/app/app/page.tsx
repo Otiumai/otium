@@ -550,8 +550,13 @@ export default function AppPage() {
         </div>
       )}
 
+      {/* Mobile sidebar overlay */}
+      {showSidebar && (
+        <div className="fixed inset-0 bg-black/30 z-30 md:hidden" onClick={() => setShowSidebar(false)} />
+      )}
+
       {/* Sidebar */}
-      <div className={`${showSidebar ? "w-64" : "w-0"} transition-all duration-300 bg-surface-100 flex flex-col overflow-hidden border-r border-surface-200/60`}>
+      <div className={`${showSidebar ? "w-64 translate-x-0" : "w-0 -translate-x-full md:translate-x-0"} fixed md:relative z-40 md:z-auto h-full transition-all duration-300 bg-surface-100 flex flex-col overflow-hidden border-r border-surface-200/60`}>
         <div className="p-5 border-b border-surface-200/60">
           <Link href="/" className="flex items-center gap-2 mb-5">
             <MobiusLogoMark size={24} />
@@ -569,7 +574,7 @@ export default function AppPage() {
           {interests.map((interest) => {
             const prog = interest.course ? (() => { const t = interest.course.days.reduce((s, w) => s + w.tasks.length, 0); const d = interest.course.days.reduce((s, w) => s + w.tasks.filter((t2) => t2.completed).length, 0); return t > 0 ? Math.round((d / t) * 100) : 0; })() : 0;
             return (
-              <div key={interest.id} className={`group flex items-center gap-3 px-3 py-2.5 rounded-apple cursor-pointer transition-all duration-200 ${activeInterestId === interest.id ? "bg-white shadow-sm text-surface-900" : "hover:bg-white/60 text-surface-600"}`} onClick={() => { setActiveInterestId(interest.id); }}>
+              <div key={interest.id} className={`group flex items-center gap-3 px-3 py-2.5 rounded-apple cursor-pointer transition-all duration-200 ${activeInterestId === interest.id ? "bg-white shadow-sm text-surface-900" : "hover:bg-white/60 text-surface-600"}`} onClick={() => { setActiveInterestId(interest.id); if (window.innerWidth < 768) setShowSidebar(false); }}>
                 <span className="text-base">{interest.emoji}</span>
                 <div className="flex-1 min-w-0">
                   <span className="block truncate text-body-sm font-medium capitalize">{interest.name}</span>
@@ -610,31 +615,31 @@ export default function AppPage() {
       {/* Main area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="bg-white border-b border-surface-200/60 px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button onClick={() => setShowSidebar(!showSidebar)} className="p-2 hover:bg-surface-100 rounded-apple transition-colors">
+        <div className="bg-white border-b border-surface-200/60 px-4 md:px-6 py-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 md:gap-4 min-w-0">
+            <button onClick={() => setShowSidebar(!showSidebar)} className="p-2 hover:bg-surface-100 rounded-apple transition-colors shrink-0">
               <ChevronRight className={`w-4 h-4 text-surface-400 transition-transform duration-300 ${showSidebar ? "rotate-180" : ""}`} />
             </button>
             {activeInterest ? (
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{activeInterest.emoji}</span>
-                <h2 className="text-body font-semibold text-surface-800 capitalize">{activeInterest.name}</h2>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-lg shrink-0">{activeInterest.emoji}</span>
+                <h2 className="text-body font-semibold text-surface-800 capitalize truncate">{activeInterest.name}</h2>
               </div>
             ) : (
               <h2 className="text-body font-medium text-surface-400">New interest</h2>
             )}
           </div>
           {activeInterest && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <div className="flex items-center bg-surface-100 rounded-apple p-0.5">
-                <button onClick={() => setActiveTab("chat")} className={`px-4 py-1.5 rounded-[10px] text-body-sm font-medium transition-all duration-200 ${activeTab === "chat" ? "bg-white shadow-sm text-surface-900" : "text-surface-400 hover:text-surface-600"}`}>
-                  <span className="flex items-center gap-1.5"><MessageCircle className="w-3.5 h-3.5" /> Chat</span>
+                <button onClick={() => setActiveTab("chat")} className={`px-3 md:px-4 py-1.5 rounded-[10px] text-body-sm font-medium transition-all duration-200 ${activeTab === "chat" ? "bg-white shadow-sm text-surface-900" : "text-surface-400 hover:text-surface-600"}`}>
+                  <span className="flex items-center gap-1.5"><MessageCircle className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Chat</span></span>
                 </button>
-                <button onClick={() => setActiveTab("journey")} className={`px-4 py-1.5 rounded-[10px] text-body-sm font-medium transition-all duration-200 ${activeTab === "journey" ? "bg-white shadow-sm text-surface-900" : "text-surface-400 hover:text-surface-600"}`}>
-                  <span className="flex items-center gap-1.5"><Target className="w-3.5 h-3.5" /> My Journey {course ? `(${courseProgress}%)` : ""}</span>
+                <button onClick={() => setActiveTab("journey")} className={`px-3 md:px-4 py-1.5 rounded-[10px] text-body-sm font-medium transition-all duration-200 ${activeTab === "journey" ? "bg-white shadow-sm text-surface-900" : "text-surface-400 hover:text-surface-600"}`}>
+                  <span className="flex items-center gap-1.5"><Target className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Journey</span> {course ? `${courseProgress}%` : ""}</span>
                 </button>
               </div>
-              <AutoSpeakToggle autoSpeak={tts.autoSpeak} onToggle={tts.setAutoSpeak} supported={tts.supported} />
+              <span className="hidden md:inline-flex"><AutoSpeakToggle autoSpeak={tts.autoSpeak} onToggle={tts.setAutoSpeak} supported={tts.supported} /></span>
             </div>
           )}
         </div>
@@ -642,13 +647,13 @@ export default function AppPage() {
         {/* Chat Tab */}
         {activeTab === "chat" ? (
           <>
-            <div className="flex-1 overflow-y-auto px-6 py-6">
+            <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6">
               <div className="max-w-2xl mx-auto space-y-5">
                 {!activeInterest && (
-                  <div className="flex justify-center items-center h-full min-h-[400px]">
-                    <div className="text-center">
+                  <div className="flex justify-center items-center h-full min-h-[300px] md:min-h-[400px]">
+                    <div className="text-center px-4">
                       <MobiusLogoMark size={56} className="mx-auto mb-6" />
-                      <h2 className="text-headline text-surface-900 mb-2 font-display">What are you interested in?</h2>
+                      <h2 className="text-title md:text-headline text-surface-900 mb-2 font-display">What are you interested in?</h2>
                       <p className="text-body text-surface-400">Type any hobby or interest and I&apos;ll help you dive in.</p>
                     </div>
                   </div>
@@ -711,7 +716,7 @@ export default function AppPage() {
               </div>
             </div>
 
-            <div className="border-t border-surface-200/60 bg-white px-6 py-4">
+            <div className="border-t border-surface-200/60 bg-white px-4 md:px-6 py-3 md:py-4">
               <div className="max-w-2xl mx-auto">
                 <form onSubmit={(e) => { e.preventDefault(); sendMessage(inputValue); }} className="flex items-center gap-3">
                   <input ref={inputRef} type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder={activeInterest ? (stt.isListening ? "Listening..." : "Ask anything about this interest...") : "What are you interested in?"} className={`input-field flex-1 ${stt.isListening ? "border-red-300 ring-2 ring-red-100" : ""}`} disabled={isLoading} autoFocus />
@@ -727,7 +732,7 @@ export default function AppPage() {
           /* Journey Tab */
           <div className="flex-1 overflow-y-auto">
             {course ? (
-              <div className="max-w-2xl mx-auto px-6 py-6 space-y-6">
+              <div className="max-w-2xl mx-auto px-4 md:px-6 py-6 space-y-6">
                 {/* Journey Header */}
                 <div className="bg-gradient-to-br from-surface-900 via-surface-800 to-surface-900 rounded-apple-lg p-6 text-white relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-accent-500/10 rounded-full -translate-y-8 translate-x-8" />
@@ -748,7 +753,7 @@ export default function AppPage() {
                       </div>
                       <span className="text-body font-bold text-accent-300">{courseProgress}%</span>
                     </div>
-                    <div className="flex items-center gap-6 text-caption">
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-caption">
                       <span className="flex items-center gap-1.5 text-surface-300"><BookOpen className="w-3.5 h-3.5" /> {completedTaskCount}/{totalTaskCount} tasks</span>
                       <span className="flex items-center gap-1.5 text-surface-300"><Trophy className="w-3.5 h-3.5" /> {completedDays} days done</span>
                       <span className="flex items-center gap-1.5 text-surface-300"><Calendar className="w-3.5 h-3.5" /> Day {course.currentDay}</span>
@@ -775,7 +780,7 @@ export default function AppPage() {
                 )}
 
                 {/* Quick Actions */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button onClick={() => { sendMessage("How am I doing on my course? Any tips for what I should focus on?", true); }} className="flex items-center gap-3 p-4 bg-surface-100 rounded-apple-lg hover:bg-surface-200/80 transition-colors text-left">
                     <MessageCircle className="w-5 h-5 text-accent-500 shrink-0" />
                     <div>
